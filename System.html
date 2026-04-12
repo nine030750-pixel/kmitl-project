@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0a0f1c;
+      --bg-soft: rgba(255,255,255,0.04);
+      --panel: rgba(12, 18, 31, 0.90);
+      --panel-2: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.08);
+      --text: #f7fbff;
+      --muted: rgba(255,255,255,0.68);
+      --primary: #19c2ff;
+      --accent: #2ecc71;
+      --blue: #1e63b6;
+      --green: #0f8b6d;
+      --purple: #6d58ff;
+      --orange: #c67a12;
+      --danger: #ff5b5b;
+      --warning: #ffb020;
+      --shadow: 0 12px 35px rgba(0,0,0,0.24);
+      --radius: 22px;
+    }
+
+    body.light {
+      --bg: #eef4fb;
+      --bg-soft: rgba(0,0,0,0.04);
+      --panel: rgba(255,255,255,0.92);
+      --panel-2: rgba(0,0,0,0.03);
+      --border: rgba(0,0,0,0.08);
+      --text: #111827;
+      --muted: rgba(17,24,39,0.65);
+      --shadow: 0 12px 28px rgba(0,0,0,0.10);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", "Kanit", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        linear-gradient(rgba(5,10,18,0.72), rgba(5,10,18,0.78)),
+        url("https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=1600&q=80") center/cover no-repeat fixed;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    body.light {
+      background:
+        linear-gradient(rgba(238,244,251,0.76), rgba(238,244,251,0.82)),
+        url("https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=1600&q=80") center/cover no-repeat fixed;
+    }
+
+    .page {
+      padding: 24px;
+      min-height: 100vh;
+      backdrop-filter: blur(3px);
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      border: 1px solid var(--border);
+      border-radius: 34px;
+      padding: 30px 28px 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      bottom: -40px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(25,194,255,0.22), transparent 68%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .hero-main {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .hero-back {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      text-decoration: none;
+      transition: 0.2s;
+      font-size: 18px;
+    }
+
+    .hero-back:hover {
+      transform: translateX(-2px);
+      background: rgba(255,255,255,0.12);
+    }
+
+    .hero-icon {
+      width: 84px;
+      height: 84px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      border: 1px solid var(--border);
+      background: radial-gradient(circle, rgba(25,194,255,0.28), rgba(255,255,255,0.05));
+      box-shadow: 0 0 20px rgba(25,194,255,0.22);
+    }
+
+    .hero h1 {
+      font-size: 46px;
+      margin-bottom: 6px;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .hero-menu-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .summary-card {
+      background: rgba(0,0,0,0.18);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 16px;
+    }
+
+    .summary-card .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .summary-card .value {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr 360px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-head h3 {
+      font-size: 18px;
+    }
+
+    .panel-body {
+      padding: 16px 18px 18px;
+    }
+
+    .menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 14px;
+      cursor: pointer;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      transition: 0.2s;
+    }
+
+    .menu-item:hover,
+    .menu-item.active {
+      background: rgba(25,194,255,0.14);
+      border-color: rgba(25,194,255,0.25);
+    }
+
+    .menu-item i {
+      width: 18px;
+      text-align: center;
+    }
+
+    .content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section.active {
+      display: flex;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-header h4 {
+      font-size: 18px;
+    }
+
+    .card-body {
+      padding: 16px 18px 18px;
+    }
+
+    .card-blue { border-left: 4px solid var(--blue); }
+    .card-green { border-left: 4px solid var(--green); }
+    .card-purple { border-left: 4px solid var(--purple); }
+    .card-orange { border-left: 4px solid var(--orange); }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    input[type="range"] {
+      padding: 0;
+      background: transparent;
+      border: none;
+      accent-color: var(--accent);
+    }
+
+    .inline {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .inline > * {
+      flex: 1;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      color: #04111b;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+      background: linear-gradient(45deg, #ff5b5b, #ff867d);
+      color: white;
+    }
+
+    .toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .toggle-text {
+      flex: 1;
+    }
+
+    .toggle-text .title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .toggle-text .sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .switch {
+      position: relative;
+      width: 54px;
+      height: 30px;
+      flex: 0 0 auto;
+    }
+
+    .switch input { display: none; }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.14);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: 0.25s;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      left: 4px;
+      top: 4px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.25s;
+    }
+
+    .switch input:checked + .slider {
+      background: linear-gradient(45deg,
+      var(--primary), var(--accent));
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(24px);
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      background: rgba(46,204,113,0.14);
+      color: #73f0a9;
+      border: 1px solid rgba(46,204,113,0.2);
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .list-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      border-radius: inherit;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .stat-box .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-box .value {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .small-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .lang-btns, .unit-btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .chip.active {
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      color: #03131e;
+      border-color: transparent;
+    }
+
+    .rightbar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: rgba(8,16,28,0.94);
+      color: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      transform: translateY(30px);
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.25s;
+      z-index: 9999;
+      max-width: 300px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 1200px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-grid,
+      .grid-2,
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="hero-main">
+          <a class="hero-back" href="../น้ำท่วม1.html" title="กลับไปหน้าหลัก"><i class="fas fa-arrow-left"></i></a>
+          <div class="hero-icon">
+            <i class="fas fa-gear"></i>
+          </div>
+          <div>
+            <h1 id="heroTitle">System</h1>
+            <p id="heroSubtitle">จัดการฐานข้อมูลผู้ใช้และการตั้งค่าระบบพื้นฐาน</p>
+          </div>
+        </div>
+        <button class="hero-menu-btn">
+          <i class="fas fa-ellipsis"></i>
+        </button>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="label" id="sumUsersLabel">Active Users</div>
+          <div class="value" id="sumUsers">128</div>
+        </div>
+        <div class="summary-card">
+          <div class="label" id="sumSyncLabel">Last Sync</div>
+          <div class="value" id="sumSync">2 min</div>
+        </div>
+        <div class="summary-card">
+          <div class="label" id="sumModeLabel">Theme</div>
+          <div class="value" id="sumTheme">Dark</div>
+        </div>
+        <div class="summary-card">
+          <div class="label" id="sumLangLabel">Language</div>
+          <div class="value" id="sumLanguage">TH</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <div class="panel-head">
+          <h3 id="menuTitle">Menu</h3>
+        </div>
+        <div class="panel-body">
+          <div class="menu-list"><button class="menu-item active" data-target="userSection">
+              <i class="fas fa-user-shield"></i>
+              <span id="menuUser">User Management</span>
+            </button>
+            <button class="menu-item" data-target="configSection">
+              <i class="fas fa-sliders"></i>
+              <span id="menuConfig">System Configuration</span>
+            </button>
+            <button class="menu-item" data-target="uiSection">
+              <i class="fas fa-display"></i>
+              <span id="menuUI">UI & Display</span>
+            </button>
+            <button class="menu-item" data-target="healthSection">
+              <i class="fas fa-heart-pulse"></i>
+              <span id="menuHealth">Data & Health</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="section active" id="userSection">
+          <div class="grid-2">
+            <div class="card card-blue">
+              <div class="card-header">
+                <h4 id="userProfileTitle">User Profile</h4>
+                <span class="badge"><i class="fas fa-circle"></i><span id="onlineText">Online</span></span>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label id="labelName">Name</label>
+                  <input type="text" id="userName" placeholder="ชื่อผู้ใช้" />
+                </div>
+                <div class="form-group">
+                  <label id="labelEmail">Email</label>
+                  <input type="email" id="userEmail" placeholder="email@example.com" />
+                </div>
+                <div class="form-group">
+                  <label id="labelRole">Role</label>
+                  <select id="userRole">
+                    <option value="Admin">Admin</option>
+                    <option value="Operator">Operator</option>
+                    <option value="Viewer">Viewer</option>
+                  </select>
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="saveProfile()" id="saveProfileBtn">Save Profile</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-blue">
+              <div class="card-header">
+                <h4 id="passwordTitle">Change Password</h4>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label id="labelOldPassword">Old Password</label>
+                  <input type="password" id="oldPassword" />
+                </div>
+                <div class="form-group">
+                  <label id="labelNewPassword">New Password</label>
+                  <input type="password" id="newPassword" />
+                </div>
+                <div class="form-group">
+                  <label id="labelConfirmPassword">Confirm Password</label>
+                  <input type="password" id="confirmPassword" />
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="changePassword()" id="changePasswordBtn">Update Password</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card card-blue">
+              <div class="card-header">
+                <h4 id="accessTitle">Role & Access</h4>
+              </div>
+              <div class="card-body">
+                <div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title">Admin Access</div>
+                    <div class="sub" id="adminAccessSub">Full control of system settings</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="adminAccess" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title">Operator Access</div>
+                    <div class="sub" id="operatorAccessSub">Can monitor and update operations</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="operatorAccess" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title">Viewer Access</div>
+                    <div class="sub" id="viewerAccessSub">Read-only dashboard access</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="viewerAccess" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="saveAccess()" id="saveAccessBtn">Save Access</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-blue">
+              <div class="card-header">
+                <h4 id="sessionLogTitle">Session Log</h4>
+              </div>
+              <div class="card-body">
+                <div class="list" id="sessionLogList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="configSection">
+          <div class="grid-2">
+            <div class="card card-green">
+              <div class="card-header">
+                <h4 id="riskTitle">Risk Threshold</h4>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label id="lowRiskLabel">Low Risk</label>
+                  <input type="range" id="lowRisk" min="0" max="100" />
+                  <div class="small-note"><span id="lowRiskValue">30</span></div>
+                </div>
+                <div class="form-group">
+                  <label id="mediumRiskLabel">Medium Risk</label>
+                  <input type="range" id="mediumRisk" min="0" max="100" />
+                  <div class="small-note"><span id="mediumRiskValue">60</span></div>
+                </div><div class="form-group">
+                  <label id="highRiskLabel">High Risk</label>
+                  <input type="range" id="highRisk" min="0" max="100" />
+                  <div class="small-note"><span id="highRiskValue">85</span></div>
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="saveThresholds()" id="saveThresholdBtn">Save Thresholds</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-green">
+              <div class="card-header">
+                <h4 id="alertTitle">Alert Settings</h4>
+              </div>
+              <div class="card-body">
+                <div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title" id="emailAlertTitle">Email Alert</div>
+                    <div class="sub" id="emailAlertSub">Send alert by email</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="alertEmail" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title" id="smsAlertTitle">SMS Alert</div>
+                    <div class="sub" id="smsAlertSub">Send alert by SMS</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="alertSMS" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title" id="pushAlertTitle">Push Notification</div>
+                    <div class="sub" id="pushAlertSub">Send in-app push alerts</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="alertPush" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="saveAlerts()" id="saveAlertBtn">Save Alerts</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card card-green">
+              <div class="card-header">
+                <h4 id="refreshTitle">Refresh Interval</h4>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label id="refreshLabel">Fetch data every N minutes</label>
+                  <input type="number" id="refreshInterval" min="1" max="120" />
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="saveRefresh()" id="saveRefreshBtn">Save Interval</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-green">
+              <div class="card-header">
+                <h4 id="mapViewTitle">Default Map View</h4>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label id="zoomLabel">Default Zoom</label>
+                  <input type="number" id="defaultZoom" min="1" max="20" />
+                </div>
+                <div class="form-group">
+                  <label id="centerLabel">Map Center</label>
+                  <input type="text" id="defaultCenter" placeholder="13.7563,100.5018" />
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="saveMapView()" id="saveMapBtn">Save Map View</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="uiSection">
+          <div class="grid-2">
+            <div class="card card-purple">
+              <div class="card-header">
+                <h4 id="themeTitle">Dark / Light Mode</h4>
+              </div>
+              <div class="card-body">
+                <div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title" id="themeToggleTitle">Theme Mode</div>
+                    <div class="sub" id="themeToggleSub">Stored in localStorage</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="themeToggle" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-purple">
+              <div class="card-header">
+                <h4 id="languageTitle">Language</h4>
+              </div>
+              <div class="card-body">
+                <div class="lang-btns">
+                  <button class="chip" id="langTHBtn" onclick="setLanguage('th')">ไทย</button>
+                  <button class="chip" id="langENBtn" onclick="setLanguage('en')">English</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card card-purple">
+              <div class="card-header">
+                <h4 id="unitTitle">Units</h4>
+              </div>
+              <div class="card-body">
+                <div class="unit-btns">
+                  <button class="chip" id="unitMetricBtn" onclick="setUnit('metric')">metric</button>
+                  <button class="chip" id="unitImperialBtn" onclick="setUnit('imperial')">imperial</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-purple">
+              <div class="card-header">
+                <h4 id="notifyTitle">Notification</h4>
+              </div>
+              <div class="card-body">
+                <div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title" id="soundAlertTitle">Sound Alert</div>
+                    <div class="sub" id="soundAlertSub">Play alert sound</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="soundAlert" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div><div class="toggle">
+                  <div class="toggle-text">
+                    <div class="title" id="visualAlertTitle">Visual Alert</div>
+                    <div class="sub" id="visualAlertSub">Show popup banner alerts</div>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="visualAlert" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="saveNotificationPrefs()" id="saveNotifyBtn">Save Notification</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="healthSection">
+          <div class="grid-2">
+            <div class="card card-orange">
+              <div class="card-header">
+                <h4 id="systemHealthTitle">System Health</h4>
+              </div>
+              <div class="card-body">
+                <div class="stat-grid">
+                  <div class="stat-box">
+                    <div class="label" id="uptimeLabel">Uptime</div>
+                    <div class="value" id="uptimeValue">99.98%</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="label" id="lastSyncLabel">Last Sync</div>
+                    <div class="value" id="lastSyncValue">2m</div>
+                  </div>
+                </div>
+                <div class="small-note" id="systemHealthNote">Simulated health values for dashboard demo</div>
+                <div class="progress"><span id="healthProgress" style="width: 98%;"></span></div>
+              </div>
+            </div>
+
+            <div class="card card-orange">
+              <div class="card-header">
+                <h4 id="backupTitle">Backup Config</h4>
+              </div>
+              <div class="card-body">
+                <div class="btn-row">
+                  <button class="btn btn-primary" onclick="exportConfig()" id="exportBtn">Export JSON</button>
+                  <label class="btn btn-secondary" for="importFile" id="importBtnLabel">Import JSON</label>
+                  <input type="file" id="importFile" accept=".json" hidden />
+                </div>
+                <div class="small-note" id="backupNote">Export and import system configuration</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card card-orange">
+              <div class="card-header">
+                <h4 id="activityLogTitle">Activity Log</h4>
+              </div>
+              <div class="card-body">
+                <div class="list" id="activityLogList"></div>
+              </div>
+            </div>
+
+            <div class="card card-orange">
+              <div class="card-header">
+                <h4 id="resetTitle">Reset & Cache</h4>
+              </div>
+              <div class="card-body">
+                <div class="btn-row">
+                  <button class="btn btn-secondary" onclick="clearCache()" id="clearCacheBtn">Clear Cache</button>
+                  <button class="btn btn-danger" onclick="resetDefaults()" id="resetDefaultBtn">Reset Default</button>
+                </div>
+                <div class="small-note" id="resetNote">Clear saved settings or restore default system state</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="rightbar">
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="quickStatusTitle">Quick Status</h3>
+          </div>
+          <div class="panel-body">
+            <div class="stat-grid">
+              <div class="stat-box">
+                <div class="label" id="quickRoleLabel">Current Role</div>
+                <div class="value" id="quickRoleValue">Admin</div>
+              </div>
+              <div class="stat-box">
+                <div class="label" id="quickRefreshLabel">Refresh</div>
+                <div class="value" id="quickRefreshValue">5m</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="recentActionsTitle">Recent Actions</h3>
+          </div>
+          <div class="panel-body">
+            <div class="list" id="recentActionList"></div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "sentinel_system_settings_v1";
+
+    const defaults = {
+      profile: {
+        name: "Thanapoom",
+        email: "thanapoom@example.com",
+        role: "Admin"
+      },
+      password: "",
+      access: {
+        admin: true,
+        operator: true,
+        viewer: true
+      },
+      thresholds: {
+        low: 30,
+        medium: 60,
+        high: 85
+      },
+      alerts: {
+        email: true,
+        sms: false,
+        push: true
+      },
+      refreshInterval: 5,
+      defaultMapView: {
+        zoom: 6,
+        center: "13.7563,100.5018"
+      },
+      ui: {
+        theme: "dark",
+        language: "th",
+        unit: "metric",
+        sound: true,
+        visual: true
+      },
+      health: {
+        uptime: 99.98,
+        lastSyncMinutes: 2
+      },
+      sessionLogs: [
+        { time: "2026-04-12 10:05", detail: "Admin login success" },
+        { time: "2026-04-12 08:42", detail: "Operator viewed dashboard" },
+        { time: "2026-04-11 20:11", detail: "Viewer checked map settings" }
+      ],
+      activityLogs: [
+        { time: "10:22", action: "Saved riskthreshold", by: "Admin" },
+        { time: "10:15", action: "Changed language to TH", by: "Admin" },
+        { time: "10:10", action: "Exported config", by: "Admin" }
+      ]
+    };
+
+    const textMap = {
+      th: {
+        heroTitle: "System",
+        heroSubtitle: "จัดการฐานข้อมูลผู้ใช้และการตั้งค่าระบบพื้นฐาน",
+        menuTitle: "เมนู",
+        menuUser: "User Management",
+        menuConfig: "System Configuration",
+        menuUI: "UI & Display",
+        menuHealth: "Data & Health",
+        sumUsersLabel: "ผู้ใช้ที่ใช้งาน",
+        sumSyncLabel: "ซิงก์ล่าสุด",
+        sumModeLabel: "ธีม",
+        sumLangLabel: "ภาษา",
+        onlineText: "ออนไลน์",
+        saveProfileBtn: "บันทึกโปรไฟล์",
+        changePasswordBtn: "อัปเดตรหัสผ่าน",
+        saveAccessBtn: "บันทึกสิทธิ์",
+        saveThresholdBtn: "บันทึกค่า Threshold",
+        saveAlertBtn: "บันทึกการแจ้งเตือน",
+        saveRefreshBtn: "บันทึกช่วงเวลา",
+        saveMapBtn: "บันทึกมุมแผนที่",
+        saveNotifyBtn: "บันทึก Notification",
+        exportBtn: "Export JSON",
+        importBtnLabel: "Import JSON",
+        clearCacheBtn: "ล้าง Cache",
+        resetDefaultBtn: "รีเซ็ตค่าเริ่มต้น",
+        userProfileTitle: "User Profile",
+        passwordTitle: "เปลี่ยนรหัสผ่าน",
+        accessTitle: "Role & Access",
+        sessionLogTitle: "Session Log",
+        riskTitle: "Risk Threshold",
+        alertTitle: "Alert Settings",
+        refreshTitle: "Refresh Interval",
+        mapViewTitle: "Default Map View",
+        themeTitle: "Dark / Light Mode",
+        languageTitle: "ภาษา",
+        unitTitle: "Units",
+        notifyTitle: "Notification",
+        systemHealthTitle: "System Health",
+        backupTitle: "Backup Config",
+        activityLogTitle: "Activity Log",
+        resetTitle: "Reset & Cache",
+        quickStatusTitle: "สถานะด่วน",
+        recentActionsTitle: "กิจกรรมล่าสุด",
+        labelName: "ชื่อ",
+        labelEmail: "อีเมล",
+        labelRole: "สิทธิ์",
+        labelOldPassword: "รหัสผ่านเดิม",
+        labelNewPassword: "รหัสผ่านใหม่",
+        labelConfirmPassword: "ยืนยันรหัสผ่าน",
+        lowRiskLabel: "ระดับต่ำ",
+        mediumRiskLabel: "ระดับกลาง",
+        highRiskLabel: "ระดับสูง",
+        refreshLabel: "ดึงข้อมูลทุก N นาที",
+        zoomLabel: "ค่า Zoom",
+        centerLabel: "จุดศูนย์กลางแผนที่",
+        uptimeLabel: "Uptime",
+        lastSyncLabel: "Last Sync",
+        quickRoleLabel: "สิทธิ์ปัจจุบัน",
+        quickRefreshLabel: "รอบรีเฟรช",
+        themeToggleTitle: "โหมดธีม",
+        themeToggleSub: "บันทึกใน localStorage",
+        soundAlertTitle: "Sound Alert",
+        soundAlertSub: "เล่นเสียงแจ้งเตือน",
+        visualAlertTitle: "Visual Alert",
+        visualAlertSub: "แสดงแบนเนอร์แจ้งเตือน",
+        emailAlertTitle: "Email Alert",
+        emailAlertSub: "ส่งอีเมลแจ้งเตือน",
+        smsAlertTitle: "SMS Alert",
+        smsAlertSub: "ส่งข้อความแจ้งเตือน",
+        pushAlertTitle: "Push Notification",
+        pushAlertSub: "แจ้งเตือนภายในระบบ",
+        adminAccessSub: "ควบคุมการตั้งค่าระบบทั้งหมด",
+        operatorAccessSub: "จัดการการปฏิบัติงาน",
+        viewerAccessSub: "ดูข้อมูลแบบอ่านอย่างเดียว",
+        systemHealthNote: "ค่าจำลองสำหรับหน้าแดชบอร์ด",
+        backupNote: "สำรองและนำเข้าการตั้งค่าระบบ",
+        resetNote: "ล้างค่าที่บันทึกไว้หรือคืนค่าเริ่มต้น",
+        saved: "บันทึกเรียบร้อย",
+        passwordMismatch: "รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน",
+        passwordShort: "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร",
+        passwordUpdated: "เปลี่ยนรหัสผ่านเรียบร้อย",
+        imported: "นำเข้าค่า config สำเร็จ",
+        importFailed: "ไฟล์ JSON ไม่ถูกต้อง",
+        cacheCleared: "ล้าง cache เรียบร้อย",
+        resetDone: "รีเซ็ตเป็นค่าเริ่มต้นแล้ว"
+      },
+      en: {
+        heroTitle: "System",
+        heroSubtitle: "Manage user database and basic system settings",
+        menuTitle: "Menu",
+        menuUser: "User Management",
+        menuConfig: "System Configuration",
+        menuUI: "UI & Display",
+        menuHealth: "Data & Health",
+        sumUsersLabel: "Active Users",
+        sumSyncLabel: "Last Sync",
+        sumModeLabel: "Theme",
+        sumLangLabel: "Language",
+        onlineText: "Online",
+        saveProfileBtn: "Save Profile",
+        changePasswordBtn: "Update Password",
+        saveAccessBtn: "Save Access",
+        saveThresholdBtn: "Save Thresholds",
+        saveAlertBtn: "Save Alerts",
+        saveRefreshBtn: "Save Interval",
+        saveMapBtn: "Save Map View",
+        saveNotifyBtn: "Save Notification",
+        exportBtn: "Export JSON",
+        importBtnLabel: "Import JSON",
+        clearCacheBtn: "Clear Cache",
+        resetDefaultBtn: "Reset Default",
+        userProfileTitle: "User Profile",
+        passwordTitle: "Change Password",
+        accessTitle: "Role & Access",
+        sessionLogTitle: "Session Log",
+        riskTitle: "Risk Threshold",
+        alertTitle: "Alert Settings",
+        refreshTitle: "Refresh Interval",
+        mapViewTitle: "Default Map View",
+        themeTitle: "Dark / Light Mode",
+        languageTitle: "Language",
+        unitTitle: "Units",
+        notifyTitle: "Notification",
+        systemHealthTitle: "System Health",
+        backupTitle: "Backup Config",
+        activityLogTitle: "Activity Log",
+        resetTitle: "Reset & Cache",
+        quickStatusTitle: "Quick Status",
+        recentActionsTitle: "Recent Actions",
+        labelName: "Name",
+        labelEmail: "Email",
+        labelRole: "Role",
+        labelOldPassword: "Old Password",
+        labelNewPassword: "New Password",
+        labelConfirmPassword: "Confirm Password",
+        lowRiskLabel: "Low Risk",
+        mediumRiskLabel: "Medium Risk",
+        highRiskLabel: "High Risk",
+        refreshLabel: "Fetch data every N minutes",
+        zoomLabel: "Default Zoom",
+        centerLabel: "Map Center",
+        uptimeLabel: "Uptime",
+        lastSyncLabel: "Last Sync",
+        quickRoleLabel: "Current Role",
+        quickRefreshLabel: "Refresh",
+        themeToggleTitle: "Theme Mode",
+        themeToggleSub: "Stored in localStorage",
+        soundAlertTitle: "Sound Alert",
+        soundAlertSub: "Play alert sound",
+        visualAlertTitle: "Visual Alert",
+        visualAlertSub: "Show popup banner alerts",
+        emailAlertTitle: "Email Alert",
+        emailAlertSub: "Send alert by email",
+        smsAlertTitle: "SMS Alert",
+        smsAlertSub: "Send alert by SMS",
+        pushAlertTitle: "Push Notification",
+        pushAlertSub: "Send in-app push alerts",
+        adminAccessSub: "Full control of system settings",
+        operatorAccessSub: "Can monitor and update operations",
+        viewerAccessSub: "Read-only dashboard access",
+        systemHealthNote: "Simulated health values for dashboard demo",
+        backupNote: "Export and import system configuration",
+        resetNote: "Clear saved settings or restore default system state",
+        saved: "Saved successfully",
+        passwordMismatch: "New password and confirm password do not match",
+        passwordShort: "New password must be at least 6 characters",
+        passwordUpdated: "Password updated successfully",
+        imported: "Configuration imported successfully",
+        importFailed: "Invalid JSON file",
+        cacheCleared: "Cache clearedsuccessfully",
+        resetDone: "Restored default settings"
+      }
+    };
+
+    function loadSettings() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return structuredClone(defaults);
+      try {
+        return { ...structuredClone(defaults), ...JSON.parse(saved), 
+          profile: { ...defaults.profile, ...(JSON.parse(saved).profile || {}) },
+          access: { ...defaults.access, ...(JSON.parse(saved).access || {}) },
+          thresholds: { ...defaults.thresholds, ...(JSON.parse(saved).thresholds || {}) },
+          alerts: { ...defaults.alerts, ...(JSON.parse(saved).alerts || {}) },
+          defaultMapView: { ...defaults.defaultMapView, ...(JSON.parse(saved).defaultMapView || {}) },
+          ui: { ...defaults.ui, ...(JSON.parse(saved).ui || {}) },
+          health: { ...defaults.health, ...(JSON.parse(saved).health || {}) },
+          sessionLogs: (JSON.parse(saved).sessionLogs || defaults.sessionLogs),
+          activityLogs: (JSON.parse(saved).activityLogs || defaults.activityLogs)
+        };
+      } catch {
+        return structuredClone(defaults);
+      }
+    }
+
+    let state = loadSettings();
+
+    function saveSettings() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+    }
+
+    function toast(message) {
+      const el = document.getElementById("toast");
+      el.textContent = message;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 2200);
+    }
+
+    function t(key) {
+      return textMap[state.ui.language]?.[key] || key;
+    }
+
+    function logActivity(action) {
+      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      state.activityLogs.unshift({
+        time,
+        action,
+        by: state.profile.role || "Admin"
+      });
+      state.activityLogs = state.activityLogs.slice(0, 10);
+      saveSettings();
+    }
+
+    function renderText() {
+      const keys = Object.keys(textMap[state.ui.language]);
+      keys.forEach(key => {
+        const el = document.getElementById(key);
+        if (el) el.textContent = t(key);
+      });
+    }
+
+    function renderSummary() {
+      document.getElementById("sumTheme").textContent = state.ui.theme === "dark" ? "Dark" : "Light";
+      document.getElementById("sumLanguage").textContent = state.ui.language.toUpperCase();
+      document.getElementById("sumSync").textContent = state.health.lastSyncMinutes + " min";
+      document.getElementById("quickRoleValue").textContent = state.profile.role;
+      document.getElementById("quickRefreshValue").textContent = state.refreshInterval + "m";
+      document.getElementById("uptimeValue").textContent = state.health.uptime.toFixed(2) + "%";
+      document.getElementById("lastSyncValue").textContent = state.health.lastSyncMinutes + "m";
+      document.getElementById("healthProgress").style.width = Math.min(100, state.health.uptime) + "%";
+    }
+
+    function renderFormValues() {
+      document.getElementById("userName").value = state.profile.name;
+      document.getElementById("userEmail").value = state.profile.email;
+      document.getElementById("userRole").value = state.profile.role;
+
+      document.getElementById("adminAccess").checked = state.access.admin;
+      document.getElementById("operatorAccess").checked = state.access.operator;
+      document.getElementById("viewerAccess").checked = state.access.viewer;
+
+      document.getElementById("lowRisk").value = state.thresholds.low;
+      document.getElementById("mediumRisk").value = state.thresholds.medium;
+      document.getElementById("highRisk").value = state.thresholds.high;
+      document.getElementById("lowRiskValue").textContent = state.thresholds.low;
+      document.getElementById("mediumRiskValue").textContent = state.thresholds.medium;
+      document.getElementById("highRiskValue").textContent = state.thresholds.high;
+
+      document.getElementById("alertEmail").checked = state.alerts.email;
+      document.getElementById("alertSMS").checked = state.alerts.sms;
+      document.getElementById("alertPush").checked = state.alerts.push;
+
+      document.getElementById("refreshInterval").value = state.refreshInterval;
+      document.getElementById("defaultZoom").value = state.defaultMapView.zoom;
+      document.getElementById("defaultCenter").value = state.defaultMapView.center;
+
+      document.getElementById("themeToggle").checked = state.ui.theme === "light";
+      document.getElementById("soundAlert").checked = state.ui.sound;
+      document.getElementById("visualAlert").checked = state.ui.visual;
+
+      document.getElementById("langTHBtn").classList.toggle("active", state.ui.language === "th");
+      document.getElementById("langENBtn").classList.toggle("active", state.ui.language === "en");
+      document.getElementById("unitMetricBtn").classList.toggle("active", state.ui.unit === "metric");
+      document.getElementById("unitImperialBtn").classList.toggle("active", state.ui.unit === "imperial");
+    }
+
+    function renderLogs() {const sessionWrap = document.getElementById("sessionLogList");
+      const activityWrap = document.getElementById("activityLogList");
+      const recentWrap = document.getElementById("recentActionList");
+
+      sessionWrap.innerHTML = "";
+      activityWrap.innerHTML = "";
+      recentWrap.innerHTML = "";
+
+      state.sessionLogs.forEach(item => {
+        sessionWrap.innerHTML += `
+          <div class="list-item">
+            <div>
+              <div>${item.detail}</div>
+              <div class="meta">${item.time}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      state.activityLogs.forEach(item => {
+        const html = `
+          <div class="list-item">
+            <div>
+              <div>${item.action}</div>
+              <div class="meta">${item.time} • ${item.by}</div>
+            </div>
+          </div>
+        `;
+        activityWrap.innerHTML += html;
+      });
+
+      state.activityLogs.slice(0, 4).forEach(item => {
+        recentWrap.innerHTML += `
+          <div class="list-item">
+            <div>
+              <div>${item.action}</div>
+              <div class="meta">${item.time}</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function applyTheme() {
+      document.body.classList.toggle("light", state.ui.theme === "light");
+    }
+
+    function renderAll() {
+      applyTheme();
+      renderText();
+      renderSummary();
+      renderFormValues();
+      renderLogs();
+    }
+
+    function saveProfile() {
+      state.profile.name = document.getElementById("userName").value.trim();
+      state.profile.email = document.getElementById("userEmail").value.trim();
+      state.profile.role = document.getElementById("userRole").value;
+      saveSettings();
+      logActivity("Updated user profile");
+      toast(t("saved"));
+    }
+
+    function changePassword() {
+      const newPass = document.getElementById("newPassword").value;
+      const confirmPass = document.getElementById("confirmPassword").value;
+
+      if (newPass.length < 6) {
+        toast(t("passwordShort"));
+        return;
+      }
+      if (newPass !== confirmPass) {
+        toast(t("passwordMismatch"));
+        return;
+      }
+
+      state.password = newPass;
+      document.getElementById("oldPassword").value = "";
+      document.getElementById("newPassword").value = "";
+      document.getElementById("confirmPassword").value = "";
+      saveSettings();
+      logActivity("Changed password");
+      toast(t("passwordUpdated"));
+    }
+
+    function saveAccess() {
+      state.access.admin = document.getElementById("adminAccess").checked;
+      state.access.operator = document.getElementById("operatorAccess").checked;
+      state.access.viewer = document.getElementById("viewerAccess").checked;
+      saveSettings();
+      logActivity("Updated role access");
+      toast(t("saved"));
+    }
+
+    function saveThresholds() {
+      state.thresholds.low = Number(document.getElementById("lowRisk").value);
+      state.thresholds.medium = Number(document.getElementById("mediumRisk").value);
+      state.thresholds.high = Number(document.getElementById("highRisk").value);
+      saveSettings();
+      logActivity("Saved risk threshold");
+      toast(t("saved"));
+    }
+
+    function saveAlerts() {
+      state.alerts.email = document.getElementById("alertEmail").checked;
+      state.alerts.sms = document.getElementById("alertSMS").checked;
+      state.alerts.push = document.getElementById("alertPush").checked;
+      saveSettings();
+      logActivity("Updated alert settings");
+      toast(t("saved"));
+    }
+
+    function saveRefresh() {
+      state.refreshInterval = Math.max(1, Number(document.getElementById("refreshInterval").value) || 5);
+      saveSettings();
+      logActivity("Updated refresh interval");
+      toast(t("saved"));
+    }
+
+    function saveMapView() {
+      state.defaultMapView.zoom = Math.max(1, Number(document.getElementById("defaultZoom").value) || 6);
+      state.defaultMapView.center = document.getElementById("defaultCenter").value.trim();
+      saveSettings();
+      logActivity("Saved default map view");
+      toast(t("saved"));
+    }
+
+    function saveNotificationPrefs() {
+      state.ui.sound = document.getElementById("soundAlert").checked;
+      state.ui.visual = document.getElementById("visualAlert").checked;
+      saveSettings();
+      logActivity("Saved notification preferences");
+      toast(t("saved"));
+    }
+
+    function setLanguage(lang) {
+      state.ui.language = lang;
+      saveSettings();
+      logActivity("Changed language to " + lang.toUpperCase());
+      toast(t("saved"));
+    }
+
+    function setUnit(unit) {
+      state.ui.unit = unit;
+      saveSettings();
+      logActivity("Changed unit to " + unit);
+      toast(t("saved"));
+    }
+
+    function exportConfig() {
+      const blob = newBlob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "sentinel-system-config.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      logActivity("Exported config");
+    }
+
+    function importConfig(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          state = {
+            ...structuredClone(defaults),
+            ...imported,
+            profile: { ...defaults.profile, ...(imported.profile || {}) },
+            access: { ...defaults.access, ...(imported.access || {}) },
+            thresholds: { ...defaults.thresholds, ...(imported.thresholds || {}) },
+            alerts: { ...defaults.alerts, ...(imported.alerts || {}) },
+            defaultMapView: { ...defaults.defaultMapView, ...(imported.defaultMapView || {}) },
+            ui: { ...defaults.ui, ...(imported.ui || {}) },
+            health: { ...defaults.health, ...(imported.health || {}) },
+            sessionLogs: imported.sessionLogs || defaults.sessionLogs,
+            activityLogs: imported.activityLogs || defaults.activityLogs
+          };
+          saveSettings();
+          logActivity("Imported config");
+          toast(t("imported"));
+        } catch {
+          toast(t("importFailed"));
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearCache() {
+      localStorage.removeItem(STORAGE_KEY);
+      toast(t("cacheCleared"));
+    }
+
+    function resetDefaults() {
+      localStorage.removeItem(STORAGE_KEY);
+      state = structuredClone(defaults);
+      saveSettings();
+      logActivity("Reset to default");
+      toast(t("resetDone"));
+    }
+
+    document.getElementById("themeToggle").addEventListener("change", (e) => {
+      state.ui.theme = e.target.checked ? "light" : "dark";
+      saveSettings();
+      logActivity("Changed theme to " + state.ui.theme);
+      toast(t("saved"));
+    });
+
+    document.getElementById("lowRisk").addEventListener("input", e => {
+      document.getElementById("lowRiskValue").textContent = e.target.value;
+    });
+
+    document.getElementById("mediumRisk").addEventListener("input", e => {
+      document.getElementById("mediumRiskValue").textContent = e.target.value;
+    });
+
+    document.getElementById("highRisk").addEventListener("input", e => {
+      document.getElementById("highRiskValue").textContent = e.target.value;
+    });
+
+    document.getElementById("importFile").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) importConfig(file);
+    });
+
+    document.querySelectorAll(".menu-item").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".menu-item").forEach(x => x.classList.remove("active"));
+        document.querySelectorAll(".section").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.target).classList.add("active");
+      });
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
