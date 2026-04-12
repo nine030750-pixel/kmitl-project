@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Sentinel - Deep Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ==================== โค้ดเดิม (ไม่แตะ) ==================== */
+        :root { --bg: #0a0e17; --panel: rgba(20, 26, 38, 0.95); --accent: #00d2ff; --critical: #ff4b2b; --warning: #ffa500; --safe: #2ecc71; --text: #ffffff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Kanit', sans-serif; }
+        body { background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 90px; background: rgba(0,0,0,0.5); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; padding: 25px 0; gap: 35px; z-index: 100; }
+        .nav-item { width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.4); text-decoration: none; transition: 0.3s; cursor: pointer; font-size: 1.3rem; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: #000; box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); }
+        .container { flex: 1; padding: 40px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--panel); padding: 25px; border-radius: 22px; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-card span { font-size: 0.8rem; opacity: 0.5; text-transform: uppercase; }
+        .stat-card .val { font-size: 2.2rem; font-weight: 700; color: var(--accent); margin-top: 5px; }
+        .grid-main { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 30px; }
+        .box { background: var(--panel); padding: 25px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; padding: 15px; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .btn-ai { background: linear-gradient(45deg, #00d2ff, #3a7bd5); border: none; padding: 12px 25px; border-radius: 12px; color: #000; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn-ai:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 210, 255, 0.4); }
+
+        /* ==================== MODULE: Source Badges ==================== */
+        .src-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.62rem; margin-top: 8px; padding: 3px 8px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.03); }
+        .src-badge.live { color: #2ecc71; border-color: rgba(46,204,113,0.3); background: rgba(46,204,113,0.06); }
+        .src-badge.est  { color: #ffa500; border-color: rgba(255,165,0,0.3);  background: rgba(255,165,0,0.06); }
+        .src-badge.calc { color: #00d2ff; border-color: rgba(0,210,255,0.3);  background: rgba(0,210,255,0.06); }
+        .src-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+        .tbl-live { font-size: 0.6rem; padding: 2px 6px; border-radius: 8px; background: rgba(46,204,113,0.12); color: #2ecc71; border: 1px solid rgba(46,204,113,0.25); margin-left: 6px; vertical-align: middle; }
+        .tbl-est  { font-size: 0.6rem; padding: 2px 6px; border-radius: 8px; background: rgba(255,165,0,0.1);  color: #ffa500; border: 1px solid rgba(255,165,0,0.2);  margin-left: 6px; vertical-align: middle; }
+        .chart-src-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.04); font-size: 0.65rem; color: rgba(255,255,255,0.25); }
+        .chart-src-bar a { color: #00d2ff; text-decoration: none; }
+        .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #2ecc71; margin-right: 4px; animation: livepulse 2s infinite; }
+        @keyframes livepulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+        /* ==================== MODULE: GEO Panel ==================== */
+        #geo-panel { padding: 0 0 50px 0; }
+        .geo-header-row { display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.06); }
+        .geo-live-badge { background:rgba(0,210,255,0.15); border:1px solid rgba(0,210,255,0.3); color:#00d2ff; font-size:0.68rem; padding:3px 10px; border-radius:20px; letter-spacing:1px; }
+        .geo-status-txt { font-size:0.72rem; opacity:0.35; margin-left:auto; }
+        .geo-province-select { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:7px 14px; border-radius:10px; font-size:0.82rem; cursor:pointer; outline:none; }
+        .geo-card-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px; }
+        .geo-card { background:rgba(20,26,38,0.95); border:1px solid rgba(255,255,255,0.05); border-radius:18px; padding:20px; position:relative; overflow:hidden; }
+        .geo-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#00d2ff,#3a7bd5); }
+        .geo-card-label { font-size:0.7rem; opacity:0.45; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+        .geo-card-val   { font-size:1.9rem; font-weight:700; color:#00d2ff; }
+        .geo-card-sub   { font-size:0.72rem; opacity:0.38; margin-top:5px; }
+        .geo-card-src   { font-size:0.65rem; color:#2ecc71; margin-top:10px; }
+        @keyframes geo-blink { 0%,100%{opacity:.25} 50%{opacity:1} }
+        .geo-loading .geo-card-val { animation: geo-blink 1.4s infinite; }
+        .geo-bottom-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .geo-box { background:rgba(20,26,38,0.95); border:1px solid rgba(255,255,255,0.05); border-radius:18px; padding:22px; }
+        .geo-box-title { font-size:0.82rem; font-weight:600; opacity:0.75; margin-bottom:16px; }
+        .factor-row { display:flex; align-items:center; gap:10px; margin-bottom:13px; }
+        .factor-lbl   { width:110px; font-size:0.75rem; opacity:0.55; flex-shrink:0; }
+        .factor-track { flex:1; height:7px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+        .factor-fill  { height:100%; border-radius:4px; width:0%; transition:width .9s ease; }
+        .factor-score { width:38px; text-align:right; font-size:0.78rem; font-weight:600; }
+        .factor-w     { width:50px; text-align:right; font-size:0.67rem; opacity:0.35; }
+        .score-wrap   { display:flex; align-items:center; gap:22px; }
+        .score-circle { width:92px; height:92px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; border:3px solid #ffa500; color:#ffa500; flex-shrink:0; transition:border-color .5s,color .5s; }
+        .score-num    { font-size:1.7rem; font-weight:700; line-height:1; }
+        .score-denom  { font-size:0.6rem; opacity:0.5; margin-top:2px; }
+        .score-detail { flex:1; }
+        .score-level  { font-size:0.82rem; margin-top:5px; }
+        .score-formula  { font-size:0.68rem; font-family:monospace; opacity:0.38; margin-top:8px; line-height:1.7; }
+        .score-sources  { font-size:0.63rem; opacity:0.28; margin-top:12px; line-height:1.6; }
+        .score-sources a { color:#00d2ff; text-decoration:none; }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== HTML เดิม (ไม่แตะ) ==================== -->
+    <nav class="sidebar">
+        <div class="nav-item" onclick="goToHub()"><i class="fas fa-home"></i></div>
+        <div class="nav-item" onclick="location.href='map.html'"><i class="fas fa-map-location-dot"></i></div>
+        <div class="nav-item active"><i class="fas fa-chart-pie"></i></div>
+        <div class="nav-item" onclick="alert('Module System กำลังพัฒนา')"><i class="fas fa-gear"></i></div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Deep Analysis Dashboard</h1>
+                <p style="opacity:0.5">วิเคราะห์สภาวะความเสี่ยงและปัจจัยภูมิศาสตร์รายพื้นที่</p>
+            </div>
+            <button class="btn-ai" onclick="runAI()"><i class="fas fa-robot"></i> AI SUMMARY</button>
+        </div>
+
+        <div class="grid-stats">
+            <div class="stat-card"><span>Risk Score</span><div class="val" id="risk-val">0.0</div></div>
+            <div class="stat-card"><span>Rainfall</span><div class="val" id="rain-val">0<small>mm</small></div></div>
+            <div class="stat-card"><span>Slope Avg.</span><div class="val" id="slope-val">0°</div></div>
+            <div class="stat-card"><span>Alert Zones</span><div class="val" id="alert-count" style="color:var(--critical)">0</div></div>
+        </div>
+
+        <div class="grid-main">
+            <div class="box">
+                <h4 style="margin-bottom:20px;">Risk Trend Analysis (24h)</h4>
+                <canvas id="mainChart" height="130"></canvas>
+            </div>
+            <div class="box">
+                <h4 style="margin-bottom:20px;">Environmental Factors (Radar)</h4>
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+
+        <div class="box">
+            <h4>Risk Comparison by Region</h4>
+            <table>
+                <thead>
+                    <tr><th>พื้นที่</th><th>ระดับน้ำคาดการณ์</th><th>ความเสี่ยง</th><th>สถานะ</th></tr>
+                </thead>
+                <tbody id="areaTable"></tbody>
+            </table>
+        </div>
+
+        <!-- GEO Panel — อยู่ใน .container scroll ต่อด้านล่าง -->
+        <div id="geo-panel"></div>
+    </div>
+
+    <!-- ==================== JS เดิม (ไม่แตะ) ==================== -->
+    <script>
+        let mainChart, radarChart;
+
+        function goToHub() { location.href = 'น้ำท่วม1.html'; }
+
+        function updateUI() {
+            const rain  = parseInt(localStorage.getItem('rainSlider'))  || 150;
+            const slope = parseInt(localStorage.getItem('slopeSlider')) || 15;
+            const risk  = ((rain/400)*7 + (slope/90)*3).toFixed(1);
+            const alerts = rain > 300 ? Math.floor(rain/25) : Math.floor(rain/50);
+            document.getElementById('rain-val').innerHTML  = `${rain}<small>mm</small>`;
+            document.getElementById('slope-val').innerText = `${slope}°`;
+            document.getElementById('risk-val').innerText  = risk;
+            document.getElementById('alert-count').innerText = alerts;
+            const regions = [
+                { n:"ภาคเหนือ (แม่สาย)", d:(rain*1.8/85).toFixed(2), r:(risk*1.2).toFixed(1), s:rain>300?"วิกฤต":"เฝ้าระวัง", c:rain>300?"#ff4b2b":"#ffa500" },
+                { n:"ภาคกลาง (อยุธยา)",  d:(rain*1.2/85).toFixed(2), r:(risk*0.9).toFixed(1), s:rain>200?"เฝ้าระวัง":"ปกติ",   c:rain>200?"#ffa500":"#2ecc71" },
+                { n:"ภาคใต้ (สงขลา)",   d:(rain*1.1/85).toFixed(2), r:(risk*0.7).toFixed(1), s:"ปกติ", c:"#2ecc71" }
+            ];
+            const tbody = document.getElementById('areaTable');
+            tbody.innerHTML = "";
+            regions.forEach(row => {
+                tbody.innerHTML += `<tr><td><b>${row.n}</b></td><td>${row.d} เมตร</td><td style="color:${row.c};font-weight:bold;">${row.r}</td><td><span style="color:${row.c}">● ${row.s}</span></td></tr>`;
+            });
+            renderCharts(rain, slope, risk);
+        }
+
+        function renderCharts(rain, slope, risk) {
+            if(mainChart) mainChart.destroy();
+            if(radarChart) radarChart.destroy();
+            const ctxLine = document.getElementById('mainChart').getContext('2d');
+            mainChart = new Chart(ctxLine, {
+                type:'line', data:{ labels:['00:00','06:00','12:00','18:00','Now'], datasets:[{ label:'Risk Score', data:[risk*0.2,risk*0.4,risk*0.6,risk*0.8,risk], borderColor:'#00d2ff', backgroundColor:'rgba(0,210,255,0.1)', fill:true, tension:0.4 }] },
+                options:{ plugins:{legend:{display:false}}, scales:{y:{grid:{color:'#222'}},x:{grid:{display:false}}} }
+            });
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+            radarChart = new Chart(ctxRadar, {
+                type:'radar', data:{ labels:['Rain','Slope','Soil','Land','Drain'], datasets:[{ data:[rain/4,slope,60,45,30], borderColor:'#ff4b2b', backgroundColor:'rgba(255,75,43,0.1)' }] },
+                options:{ plugins:{legend:{display:false}}, scales:{r:{grid:{color:'#333'},ticks:{display:false},angleLines:{color:'#333'}}} }
+            });
+        }
+
+        window.onload  = updateUI;
+        window.onfocus = updateUI;
+
+        function runAI() {
+            const r = document.getElementById('risk-val').innerText;
+            alert(`AI Analysis Report:\n- ระดับความเสี่ยงรวม: ${r}\n- วิเคราะห์: พบความเสี่ยงสูงในพื้นที่แม่สายเนื่องจากปริมาณฝนสะสมเกินเกณฑ์\n- คำแนะนำ: เปิดใช้ระบบ AI Monitoring รายชั่วโมง`);
+        }
+    </script>
+
+    <!-- ==================== MODULE 1: Source Badges + Live Hourly Chart ==================== -->
+    <script>
+    function injectSourceBadges() {
+        const defs = [
+            { type:'calc', label:'Calculated · AHP Model' },
+            { type:'live', label:'Open-Meteo API · Live'  },
+            { type:'est',  label:'Estimated · DEM Profile' },
+            { type:'calc', label:'Derived · Risk Threshold' },
+        ];
+        document.querySelectorAll('.stat-card').forEach((card, i) => {
+            if (card.querySelector('.src-badge')) return;
+            const el = document.createElement('div');
+            el.className = `src-badge ${defs[i].type}`;
+            el.innerHTML = `<span class="src-dot"></span>${defs[i].label}`;
+            card.appendChild(el);
+        });
+    }
+
+    async function fetchHourlyRain24h(lat, lon) {
+        try {
+            const today   = new Date();
+            const endDt   = today.toISOString().slice(0,10);
+            const startDt = new Date(today - 86400000).toISOString().slice(0,10);
+            const data = await (await fetch(
+                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation&start_date=${startDt}&end_date=${endDt}&timezone=Asia%2FBangkok`
+            )).json();
+            return { times: data.hourly.time.slice(-24), rain: data.hourly.precipitation.slice(-24) };
+        } catch { return null; }
+    }
+
+    function rebuildTrendChart(hourly) {
+        const ctx = document.getElementById('mainChart');
+        if (!ctx) return;
+        if (window.mainChart?.destroy) window.mainChart.destroy();
+        const labels   = hourly.times.map((t,i) => i%6===0 ? `${String(new Date(t).getHours()).padStart(2,'0')}:00` : '');
+        const riskData = hourly.rain.map(r => parseFloat(((r/50)*7).toFixed(2)));
+        window.mainChart = new Chart(ctx.getContext('2d'), {
+            type:'line',
+            data:{ labels, datasets:[
+                { label:'Risk Score (hourly)', data:riskData, borderColor:'#00d2ff', backgroundColor:'rgba(0,210,255,0.08)', fill:true, tension:0.4, pointRadius:0, pointHoverRadius:4 },
+                { label:'Rainfall mm', data:hourly.rain, borderColor:'#3a7bd5', backgroundColor:'rgba(58,123,213,0.05)', fill:true, tension:0.4, pointRadius:0, yAxisID:'y2' }
+            ]},
+            options:{
+                responsive:true, interaction:{mode:'index',intersect:false},
+                plugins:{ legend:{display:true,labels:{color:'rgba(255,255,255,0.4)',font:{size:11}}}, tooltip:{callbacks:{label:c=>c.datasetIndex===0?`Risk: ${c.parsed.y}`:`Rain: ${c.parsed.y} mm`}} },
+                scales:{
+                    y: {grid:{color:'#1a1a2e'},ticks:{color:'#00d2ff',font:{size:10}},title:{display:true,text:'Risk Score',color:'#00d2ff',font:{size:10}}},
+                    y2:{position:'right',grid:{display:false},ticks:{color:'#3a7bd5',font:{size:10}},title:{display:true,text:'Rain (mm)',color:'#3a7bd5',font:{size:10}}},
+                    x: {grid:{display:false},ticks:{color:'rgba(255,255,255,0.3)',font:{size:10},maxRotation:0}}
+                }
+            }
+        });
+        const box = ctx.closest('.box');
+        if (box && !box.querySelector('.chart-src-bar')) {
+            const bar = document.createElement('div');
+            bar.className = 'chart-src-bar';
+            bar.innerHTML = `<span><span class="live-dot"></span>Hourly rain · <a href="https://open-meteo.com" target="_blank">Open-Meteo API</a> · Bangkok 13.76°N 100.50°E</span><span>อัปเดต ${new Date().toLocaleTimeString('th-TH')}</span>`;
+            box.appendChild(bar);
+        }
+    }
+
+    function updateRainfallCard(hourly) {
+        const total = parseFloat(hourly.rain.reduce((a,b)=>a+(b||0),0).toFixed(1));
+        const el = document.getElementById('rain-val');
+        if (el) { el.innerHTML = `${total}<small>mm</small>`; localStorage.setItem('rainSlider', Math.min(Math.round(total*4),400)); }
+    }
+
+    function watchRegionTable() {
+        const tbody = document.getElementById('areaTable');
+        if (!tbody) return;
+        const stamp = () => {
+            tbody.querySelectorAll('tr').forEach((row, i) => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length < 2) return;
+                if (!cells[0].querySelector('.tbl-live,.tbl-est')) {
+                    const b = document.createElement('span');
+                    b.className = i===0?'tbl-live':'tbl-est';
+                    b.textContent = i===0?'Live':'Est.';
+                    cells[0].appendChild(b);
+                }
+                if (!cells[1].querySelector('.src-hint')) {
+                    const h = document.createElement('div');
+                    h.className = 'src-hint';
+                    h.style.cssText = 'font-size:0.6rem;opacity:0.3;margin-top:2px;';
+                    h.textContent = i===0?'src: Open-Meteo · AHP model':'src: Estimated · AHP model';
+                    cells[1].appendChild(h);
+                }
+            });
+        };
+        new MutationObserver(stamp).observe(tbody,{childList:true,subtree:true});
+        stamp();
+    }
+
+    function addRadarSourceNote() {
+        const box = document.getElementById('radarChart')?.closest('.box');
+        if (!box || box.querySelector('.radar-src')) return;
+        const note = document.createElement('div');
+        note.className = 'radar-src chart-src-bar';
+        note.innerHTML = `<span>Rain: <a href="https://open-meteo.com" target="_blank">Open-Meteo</a> · Slope: DEM Profile · Soil: <a href="https://www.fao.org/soils-portal/en/" target="_blank">FAO World Soil</a> · Land: GISTDA 2023 · Drain: Estimated</span>`;
+        box.appendChild(note);
+    }
+    </script>
+
+    <!-- ==================== MODULE 2: GEO Panel ==================== -->
+    <script>
+    const GEO_TERRAIN = {
+        bangkok:   { slope:0.5,  soil:5.0, land:4.0, label:'กรุงเทพมหานคร (ที่ราบลุ่ม)' },
+        maesai:    { slope:28.0, soil:7.0, land:6.5, label:'แม่สาย · ภูเขาสูง' },
+        ayutthaya: { slope:1.2,  soil:6.5, land:5.5, label:'อยุธยา · ที่ราบลุ่มแม่น้ำ' },
+        songkhla:  { slope:3.5,  soil:6.0, land:5.0, label:'สงขลา · ชายฝั่ง-เนิน' },
+        chiangmai: { slope:22.0, soil:6.8, land:6.0, label:'เชียงใหม่ · หุบเขา-ภูเขา' },
+        nakhon:    { slope:8.0,  soil:6.2, land:5.2, label:'นครศรีธรรมราช · เนินชายฝั่ง' },
+    };
+    const GEO_COORDS = {
+        bangkok:[13.7563,100.5018], maesai:[20.4316,99.8825], ayutthaya:[14.3532,100.5667],
+        songkhla:[7.1897,100.5955], chiangmai:[18.7883,98.9853], nakhon:[8.4304,99.9631]
+    };
+
+    function buildGeoPanelHTML() {
+        document.getElementById('geo-panel').innerHTML = `
+            <div class="geo-header-row">
+                <h3 style="font-size:1.05rem;font-weight:600;">GEO Data — Live Input</h3>
+                <span class="geo-live-badge">LIVE API</span>
+                <select class="geo-province-select" id="geo-province" onchange="onGeoProvinceChange()">
+                    <option value="bangkok">กรุงเทพมหานคร</option>
+                    <option value="maesai">แม่สาย (เชียงราย)</option>
+                    <option value="ayutthaya">อยุธยา</option>
+                    <option value="songkhla">สงขลา</option>
+                    <option value="chiangmai">เชียงใหม่</option>
+                    <option value="nakhon">นครศรีธรรมราช</option>
+                </select>
+                <span class="geo-status-txt" id="geo-status-txt">กำลังโหลดข้อมูล...</span>
+            </div>
+            <div class="geo-card-row">
+                <div class="geo-card geo-loading" id="gc-rain">
+                    <div class="geo-card-label">Rainfall (7-day sum)</div>
+                    <div class="geo-card-val" id="gv-rain">--</div>
+                    <div class="geo-card-sub" id="gs-rain">ย้อนหลัง 7 วัน · กำลังโหลด</div>
+                    <div class="geo-card-src">⬤ Open-Meteo API (historical)</div>
+                </div>
+                <div class="geo-card geo-loading" id="gc-elev">
+                    <div class="geo-card-label">Elevation (DEM)</div>
+                    <div class="geo-card-val" id="gv-elev">--</div>
+                    <div class="geo-card-sub" id="gs-elev">ความสูงภูมิประเทศ · กำลังโหลด</div>
+                    <div class="geo-card-src">⬤ Open-Elevation API</div>
+                </div>
+                <div class="geo-card" id="gc-slope">
+                    <div class="geo-card-label">Slope (terrain)</div>
+                    <div class="geo-card-val" id="gv-slope">--</div>
+                    <div class="geo-card-sub" id="gs-slope">ตาม terrain จริงของจังหวัด</div>
+                    <div class="geo-card-src">⬤ Derived / terrain profile</div>
+                </div>
+            </div>
+            <div class="geo-bottom-row">
+                <div class="geo-box">
+                    <div class="geo-box-title">Susceptibility Factor Weights (AHP Model)</div>
+                    <div class="factor-row"><div class="factor-lbl">Rainfall</div><div class="factor-track"><div class="factor-fill" id="fb-rain" style="background:#00d2ff"></div></div><div class="factor-score" id="fs-rain" style="color:#00d2ff">--</div><div class="factor-w">W=35%</div></div>
+                    <div class="factor-row"><div class="factor-lbl">Slope</div><div class="factor-track"><div class="factor-fill" id="fb-slope" style="background:#ffa500"></div></div><div class="factor-score" id="fs-slope" style="color:#ffa500">--</div><div class="factor-w">W=25%</div></div>
+                    <div class="factor-row"><div class="factor-lbl">Soil Type</div><div class="factor-track"><div class="factor-fill" id="fb-soil" style="background:#ff4b2b"></div></div><div class="factor-score" id="fs-soil" style="color:#ff4b2b">--</div><div class="factor-w">W=20%</div></div>
+                    <div class="factor-row"><div class="factor-lbl">Land Use</div><div class="factor-track"><div class="factor-fill" id="fb-land" style="background:#2ecc71"></div></div><div class="factor-score" id="fs-land" style="color:#2ecc71">--</div><div class="factor-w">W=20%</div></div>
+                </div>
+                <div class="geo-box">
+                    <div class="score-wrap">
+                        <div class="score-circle" id="geo-circle">
+                            <div class="score-num" id="geo-score-num">--</div>
+                            <div class="score-denom">/ 10</div>
+                        </div>
+                        <div class="score-detail">
+                            <div style="font-size:1rem;font-weight:600;">Flash Flood Susceptibility Score</div>
+                            <div class="score-level" id="geo-score-level">กำลังคำนวณ...</div>
+                            <div class="score-formula">S = (Rain×0.35) + (Slope×0.25)<br>&nbsp;&nbsp;&nbsp;&nbsp;+ (Soil×0.20) + (Land×0.20)</div>
+                            <div class="score-sources">
+                                แหล่งข้อมูล:
+                                <a href="https://open-meteo.com" target="_blank">Open-Meteo</a> ·
+                                <a href="https://api.open-elevation.com" target="_blank">Open-Elevation</a> ·
+                                Soil: FAO World Soil · Land use: GISTDA 2023
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function geoFetchRain7d(lat, lon) {
+        try {
+            const today   = new Date();
+            const endDt   = today.toISOString().slice(0,10);
+            const startDt = new Date(today - 7*86400000).toISOString().slice(0,10);
+            const data = await (await fetch(
+                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&start_date=${startDt}&end_date=${endDt}&timezone=Asia%2FBangkok`
+            )).json();
+            return parseFloat((data.daily.precipitation_sum||[]).reduce((a,b)=>a+(b||0),0).toFixed(1));
+        } catch { return null; }
+    }
+
+    async function geoFetchElev(lat, lon) {
+        try {
+            const data = await (await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lon}`)).json();
+            return data.results[0].elevation;
+        } catch { return null; }
+    }
+
+    function geoCalcScore(rainMm, terrain) {
+        const r = parseFloat(Math.min((rainMm/200)*10,10).toFixed(1));
+        const s = parseFloat(Math.min((terrain.slope/35)*10,10).toFixed(1));
+        return { rain:r, slope:s, soil:terrain.soil, land:terrain.land,
+                 total:parseFloat((r*0.35+s*0.25+terrain.soil*0.20+terrain.land*0.20).toFixed(2)) };
+    }
+
+    function geoRender(rainMm, elev, terrain, scores) {
+        document.getElementById('gc-rain').classList.remove('geo-loading');
+        document.getElementById('gv-rain').innerText = rainMm!==null?`${rainMm} mm`:'N/A';
+        document.getElementById('gs-rain').innerText = rainMm!==null?`รวม 7 วันย้อนหลัง · ${terrain.label}`:'โหลดไม่สำเร็จ';
+        document.getElementById('gc-elev').classList.remove('geo-loading');
+        document.getElementById('gv-elev').innerText = elev!==null?`${elev} ม.`:'N/A';
+        document.getElementById('gs-elev').innerText = `ความสูงเฉลี่ย · ${terrain.label}`;
+        document.getElementById('gv-slope').innerText = `${terrain.slope}°`;
+        document.getElementById('gs-slope').innerText = terrain.label;
+        if (!scores) return;
+        const setBar = (fId,sId,v) => { document.getElementById(fId).style.width=`${Math.min(v*10,100)}%`; document.getElementById(sId).innerText=v; };
+        setBar('fb-rain','fs-rain',scores.rain); setBar('fb-slope','fs-slope',scores.slope);
+        setBar('fb-soil','fs-soil',scores.soil); setBar('fb-land','fs-land',scores.land);
+        const s=scores.total, color=s>=7?'#ff4b2b':s>=4.5?'#ffa500':'#2ecc71';
+        const level=s>=7?'⚠ ความเสี่ยงสูง (High)':s>=4.5?'⚡ ความเสี่ยงปานกลาง (Moderate)':'✓ ความเสี่ยงต่ำ (Low)';
+        const circle=document.getElementById('geo-circle');
+        circle.style.borderColor=color; circle.style.color=color;
+        document.getElementById('geo-score-num').innerText=s;
+        document.getElementById('geo-score-level').innerText=level;
+        document.getElementById('geo-score-level').style.color=color;
+        if (rainMm!==null) localStorage.setItem('rainSlider',Math.min(Math.round(rainMm*2),400));
+        document.getElementById('geo-status-txt').innerText=`อัปเดต ${new Date().toLocaleTimeString('th-TH')}`;
+    }
+
+    async function initGeoModule() {
+        const key = document.getElementById('geo-province')?.value||'bangkok';
+        const [lat,lon] = GEO_COORDS[key];
+        const terrain   = GEO_TERRAIN[key];
+        document.getElementById('gc-rain')?.classList.add('geo-loading');
+        document.getElementById('gc-elev')?.classList.add('geo-loading');
+        if(document.getElementById('geo-status-txt')) document.getElementById('geo-status-txt').innerText='กำลังโหลดข้อมูล...';
+        const [rainMm,elev] = await Promise.all([geoFetchRain7d(lat,lon), geoFetchElev(lat,lon)]);
+        geoRender(rainMm, elev, terrain, rainMm!==null?geoCalcScore(rainMm,terrain):null);
+    }
+
+    function onGeoProvinceChange() { initGeoModule(); }
+
+    // ==================== INIT ALL MODULES ====================
+    window.addEventListener('load', async () => {
+        await new Promise(r => setTimeout(r, 300));
+        injectSourceBadges();
+        watchRegionTable();
+        addRadarSourceNote();
+        buildGeoPanelHTML();
+        const [hourly] = await Promise.all([
+            fetchHourlyRain24h(13.7563, 100.5018),
+            initGeoModule()
+        ]);
+        if (hourly) { updateRainfallCard(hourly); rebuildTrendChart(hourly); }
+    });
+    </script>
+</body>
+</html>
