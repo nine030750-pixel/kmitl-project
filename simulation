@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sentinel Simulation Hub - Complete Demo</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --panel: rgba(20, 26, 38, 0.96);
+      --primary: #19c2ff;
+      --accent: #2ecc71;
+      --text: #ffffff;
+      --muted: rgba(255,255,255,0.68);
+      --warning: #ffa500;
+      --danger: #ff4b2b;
+      --soft: rgba(255,255,255,0.04);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Kanit", sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 74px;
+      background: rgba(0,0,0,0.6);
+      border-right: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 0;
+    }
+
+    .nav-item {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.76);
+      cursor: pointer;
+      transition: 0.25s;
+    }
+
+    .nav-item.active,
+    .nav-item:hover {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 18px rgba(46, 204, 113, 0.35);
+    }
+
+    .main-content {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 390px;
+      gap: 18px;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .viewport-container {
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 0 40px rgba(0,0,0,0.35);
+      background: #08111f;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      min-height: calc(100vh - 32px);
+    }
+
+    .map-overlay-center {
+      position: absolute;
+      inset: 0;
+      z-index: 450;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .center-box {
+      background: rgba(10, 14, 23, 0.32);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(6px);
+      padding: 18px 24px;
+      border-radius: 18px;
+      max-width: 480px;
+      }
+
+    .center-box h2 {
+      font-size: 30px;
+      color: var(--primary);
+      letter-spacing: 2px;
+      text-shadow: 0 0 14px rgba(25, 194, 255, 0.4);
+    }
+
+    .center-box p {
+      margin-top: 6px;
+      color: rgba(255,255,255,0.78);
+      font-size: 15px;
+    }
+
+    .map-controls {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      z-index: 500;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ctrl-btn {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(15, 20, 32, 0.84);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.25s;
+      backdrop-filter: blur(4px);
+      font-size: 13px;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(25, 194, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .control-panel {
+      background: var(--panel);
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .control-panel h2 {
+      color: var(--accent);
+      font-size: 28px;
+    }
+
+    .feature-box {
+      background: rgba(255,255,255,0.03);
+      border-left: 4px solid var(--accent);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .feature-box h4 {
+      font-size: 15px;
+      margin-bottom: 8px;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .feature-box p,
+    .mini-text {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    input[type="range"], select {
+      width: 100%;
+    }
+
+    input[type="range"] {
+      accent-color: var(--accent);
+      margin: 10px 0;
+    }
+
+    select {
+      background: #111827;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 8px;
+      outline: none;
+    }
+
+    .btn-action,
+    .btn-secondary {
+      width: 100%;
+      border: none;
+      font-weight: 700;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.25s;
+      margin-top: 10px;
+    }
+
+    .btn-action {
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      color: #000;
+    }
+
+    .btn-secondary {background: rgba(255,255,255,0.08);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .btn-action:hover,
+    .btn-secondary:hover {
+      transform: scale(1.02);
+    }
+
+    .water-meter {
+      height: 10px;
+      background: #222;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .water-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #19c2ff, #2ecc71);
+      transition: 0.25s;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 13px;
+    }
+
+    .route-info {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+      white-space: pre-line;
+      margin-top: 10px;
+    }
+
+    .step-list {
+      margin-top: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .step-item {
+      background: rgba(255,255,255,0.035);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #e8f0ff;
+    }
+
+    .pill-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      font-size: 12px;
+      transition: 0.2s;
+    }
+
+    .pill.active {
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+    }
+
+    .score-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .score-card {
+      background: var(--soft);
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .score-card .label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .score-card .value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .legend {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background: #101826;
+      color: white;
+    }
+
+    .leaflet-control-attribution {
+      font-size: 10px;
+    }
+
+    @media (max-width: 1200px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+
+      .control-panel {
+        max-height: 42vh;
+      }
+
+      #map {
+        min-height: 58vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar">
+      <div class="nav-item" onclick="goToHub(); setActiveIcon(this)" title="กลับหน้าหลัก"><i class="fas fa-house"></i></div>
+      <div class="nav-item" onclick="goToMap(); setActiveIcon(this)" title="ไปยังแผนที่"><i class="fas fa-map-location-dot"></i></div>
+      <div class="nav-item" onclick="goToAnalysis(); setActiveIcon(this)" title="ไปยังหน้าวิเคราะห์"><i class="fas fa-chart-pie"></i></div>
+      <div class="nav-item active" onclick="startFullSimulation(); setActiveIcon(this)" title="เริ่มจำลอง"><i class="fas fa-flask"></i></div>
+      </nav>
+
+    <div class="main-content">
+      <div class="viewport-container">
+        <div id="map"></div>
+
+        <div class="map-overlay-center">
+          <div class="center-box">
+            <h2 id="status-text">READY TO SIMULATE</h2>
+            <p id="sub-status">Thailand Emergency Safe Routing Demo</p>
+          </div>
+        </div>
+
+        <div class="map-controls">
+          <button class="ctrl-btn" onclick="toggleFloodLayer()">
+            <i class="fas fa-water"></i> Flood Layer
+          </button>
+          <button class="ctrl-btn" onclick="calculateRoute()">
+            <i class="fas fa-route"></i> Safe Road Route
+          </button>
+          <button class="ctrl-btn" onclick="useCurrentLocation()">
+            <i class="fas fa-location-crosshairs"></i> Current Location
+          </button>
+          <button class="ctrl-btn" onclick="resetMapView()">
+            <i class="fas fa-rotate-left"></i> Reset View
+          </button>
+        </div>
+      </div>
+
+      <div class="control-panel">
+        <h2>SIMULATION</h2>
+
+        <div class="feature-box">
+          <h4>Province & Safe Zone</h4>
+          <p>เลือกจังหวัดและประเภทจุดปลอดภัยที่ต้องการให้ระบบพาไป</p>
+
+          <select id="provinceSelect"></select>
+          <select id="safeTypeSelect">
+            <option value="shelter">ศูนย์อพยพ</option>
+            <option value="hospital">โรงพยาบาล</option>
+            <option value="police">สถานีตำรวจ</option>
+            <option value="highground">พื้นที่สูง</option>
+          </select>
+
+          <button class="btn-secondary" onclick="showSafePlaces()">SHOW SAFE PLACES</button>
+        </div>
+
+        <div class="feature-box">
+          <h4>Route Mode</h4>
+          <p>เลือกโหมดการคำนวณเส้นทาง</p>
+
+          <div class="pill-group">
+            <button class="pill active" data-mode="fastest" onclick="setRouteMode('fastest', this)">เร็วสุด</button>
+            <button class="pill" data-mode="safest" onclick="setRouteMode('safest', this)">ปลอดภัยสุด</button>
+            <button class="pill" data-mode="balanced" onclick="setRouteMode('balanced', this)">สมดุล</button>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item"><span class="dot" style="background:#19c2ff;"></span> เร็วสุด</div>
+            <div class="legend-item"><span class="dot" style="background:#2ecc71;"></span> ปลอดภัยสุด</div>
+            <div class="legend-item"><span class="dot" style="background:#ffa500;"></span> สมดุล</div>
+          </div>
+        </div>
+
+        <div class="feature-box">
+          <h4>Flood Time-Lapse</h4>
+          <p>จำลองระดับน้ำ 0 - 5 เมตร เพื่อแสดงขอบเขตเสี่ยงบนแผนที่</p>
+
+          <input type="range" id="waterLevel" min="0" max="500" value="0" oninput="runSim()" />
+          <div class="water-meter">
+            <div id="water-fill" class="water-fill"></div>
+          </div>
+          <div class="status-row">
+            <span>Level: <span id="level-val">0.0</span> m</span>
+            <span id="risk-msg" style="color:#2ecc71;">NORMAL</span>
+          </div>
+        </div>
+
+        <div class="feature-box" style="border-left-color: var(--primary);">
+          <h4>Real Road Route</h4>
+          <p>เส้นทางบนถนนจริง พร้อมเลือกประเภทจุดปลอดภัยและโหมดเส้นทาง</p>
+
+          <button class="btn-action" onclick="calculateRoute()">CALCULATE SAFE ROUTE</button>
+          <button class="btn-secondary" onclick="openInGoogleMaps()">OPEN IN GOOGLE MAPS</button>
+
+          <div id="routeInfo" class="route-info">ยังไม่มีการคำนวณเส้นทาง</div>
+
+          <div class="score-box">
+            <div class="score-card">
+              <div class="label">SAFETY SCORE</div>
+              <div class="value" id="safetyScore">--</div>
+            </div>
+            <div class="score-card">
+              <div class="label">RISK LEVEL</div>
+              <div class="value" id="riskLevelText">--</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-box" style="border-left-color:#ffa500;">
+          <h4>Route Steps</h4>
+          <p>คำอธิบายแต่ละช่วงทางจาก route engine</p>
+          <div id="stepsContainer" class="step-list"></div>
+        </div>
+
+        <button class="btn-action" onclick="startFullSimulation()">RUN FULL SIMULATION</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script>
+    let map;
+    let floodCircle = null;
+    let floodLayerVisible = false;
+    let routeLine = null;
+    let simulationInterval = null;
+    let startMarker = null;
+    let safeMarker = null;
+    let userMarker = null;
+    let safePlaceMarkers = [];
+    let currentRouteMode = "fastest";
+    let currentStartPoint = null;
+    let lastRouteDestination = null;
+
+    const provinces = {
+      "กรุงเทพมหานคร": { center: [13.7563, 100.5018], flood: [13.7440, 100.5160], zoom: 11 },
+      "เชียงใหม่": { center: [18.7883, 98.9853], flood: [18.7800, 98.9900], zoom: 11 },
+      "ขอนแก่น": { center: [16.4419, 102.8350], flood: [16.4300, 102.8400], zoom: 11 },
+      "สงขลา": { center: [7.1897, 100.5951], flood: [7.1800, 100.5800], zoom: 11 },
+      "ชลบุรี": { center: [13.3611, 100.9847], flood: [13.3500, 100.9800], zoom: 11 },
+      "นครราชสีมา": { center: [14.9799, 102.0977], flood: [14.9700, 102.0900], zoom: 11 },
+      "ภูเก็ต": { center: [7.8804, 98.3923], flood: [7.8700, 98.3800], zoom: 11 },
+      "อุบลราชธานี": { center: [15.2447, 104.8473], flood: [15.2300, 104.8300], zoom: 11 },
+      "อุดรธานี": { center: [17.4138, 102.7870], flood: [17.4000, 102.7700], zoom: 11 },
+      "สุราษฎร์ธานี": { center: [9.1382, 99.3215], flood: [9.1200, 99.3100], zoom: 11 }
+    };
+
+    const safePlacesByProvince = {
+      "กรุงเทพมหานคร": {
+        shelter: [
+          { name: "ศูนย์อพยพดินแดง", coords: [13.7710, 100.5550] },
+          { name: "ศูนย์อพยพรัชดา", coords: [13.7900, 100.5740] },
+          { name: "ศูนย์อพยพจตุจักร", coords: [13.8130, 100.5580] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่าง A", coords: [13.7650, 100.5380] },
+          { name: "โรงพยาบาลตัวอย่าง B", coords: [13.7820, 100.5660] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่าง A", coords: [13.7480, 100.5270] },
+          { name: "สถานีตำรวจตัวอย่าง B", coords: [13.7930, 100.5480] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่าง A", coords: [13.8040, 100.5820] },
+          { name: "พื้นที่สูงตัวอย่าง B", coords: [13.8210, 100.6030] }
+        ]
+      },
+      "เชียงใหม่": {
+        shelter: [
+          { name: "ศูนย์อพยพเมืองเชียงใหม่", coords: [18.7990, 99.0050] },
+          { name: "ศูนย์อพยพแม่เหียะ", coords: [18.7670, 98.9660] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างเชียงใหม่", coords: [18.7940, 99.0010] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างเชียงใหม่", coords: [18.8010, 98.9890] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างเชียงใหม่", coords: [18.8210, 99.0300] }
+        ]
+      },
+      "ขอนแก่น": {
+        shelter: [
+          { name: "ศูนย์อพยพขอนแก่น 1", coords: [16.4570, 102.8610] },
+          { name: "ศูนย์อพยพขอนแก่น 2", coords: [16.4740, 102.8840] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างขอนแก่น", coords: [16.4430, 102.8290] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างขอนแก่น", coords: [16.4490, 102.8440] }
+          ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างขอนแก่น", coords: [16.4840, 102.8960] }
+        ]
+      },
+      "สงขลา": {
+        shelter: [
+          { name: "ศูนย์อพยพสงขลา", coords: [7.2120, 100.6170] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างสงขลา", coords: [7.2040, 100.6020] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างสงขลา", coords: [7.1930, 100.5980] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างสงขลา", coords: [7.2350, 100.6410] }
+        ]
+      },
+      "ชลบุรี": {
+        shelter: [
+          { name: "ศูนย์อพยพชลบุรี", coords: [13.3860, 101.0170] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างชลบุรี", coords: [13.3540, 100.9890] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างชลบุรี", coords: [13.3720, 101.0040] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างชลบุรี", coords: [13.3980, 101.0360] }
+        ]
+      },
+      "นครราชสีมา": {
+        shelter: [
+          { name: "ศูนย์อพยพโคราช", coords: [15.0030, 102.1300] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างโคราช", coords: [14.9920, 102.1080] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างโคราช", coords: [14.9850, 102.0900] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างโคราช", coords: [15.0260, 102.1570] }
+        ]
+      },
+      "ภูเก็ต": {
+        shelter: [
+          { name: "ศูนย์อพยพภูเก็ต", coords: [7.8970, 98.4100] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างภูเก็ต", coords: [7.8850, 98.3970] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างภูเก็ต", coords: [7.8770, 98.3890] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างภูเก็ต", coords: [7.9230, 98.4410] }
+        ]
+      },
+      "อุบลราชธานี": {
+        shelter: [
+          { name: "ศูนย์อพยพอุบล", coords: [15.2730, 104.8790] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างอุบล", coords: [15.2510, 104.8540] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างอุบล", coords: [15.2440, 104.8390] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างอุบล", coords: [15.2920, 104.9070] }
+        ]
+      },
+      "อุดรธานี": {
+        shelter: [
+          { name: "ศูนย์อพยพอุดร", coords: [17.4400, 102.8230] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างอุดร", coords: [17.4170, 102.7920] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างอุดร", coords: [17.4070, 102.7800] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างอุดร", coords: [17.4580, 102.8480] }
+        ]
+      },
+      "สุราษฎร์ธานี": {
+        shelter: [
+          { name: "ศูนย์อพยพสุราษฎร์", coords: [9.1640, 99.3520] }
+        ],
+        hospital: [
+          { name: "โรงพยาบาลตัวอย่างสุราษฎร์", coords: [9.1420, 99.3260] }
+        ],
+        police: [
+          { name: "สถานีตำรวจตัวอย่างสุราษฎร์", coords: [9.1320, 99.3140] }
+        ],
+        highground: [
+          { name: "พื้นที่สูงตัวอย่างสุราษฎร์", coords: [9.1850, 99.3710] }
+        ]
+      }
+    };
+
+    function populateProvinceSelect() {
+      const select = document.getElementById("provinceSelect");
+      const names = Object.keys(provinces).sort((a, b) => a.localeCompare(b, "th"));
+
+      names.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+
+      select.value = "กรุงเทพมหานคร";
+      select.addEventListener("change", onProvinceChange);
+      document.getElementById("safeTypeSelect").addEventListener("change", showSafePlaces);
+    }
+
+    function initMap() {
+      map = L.map("map", { zoomControl: true }).setView([15.87, 100.9925], 6);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        subdomains: ["a", "b", "c"],
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      onProvinceChange();
+    }
+
+    function getSelectedProvinceName() {
+      return document.getElementById("provinceSelect").value;
+    }
+
+    function getSelectedProvinceData() {
+      return provinces[getSelectedProvinceName()];
+    }
+
+    function getSelectedSafeType() {
+      return document.getElementById("safeTypeSelect").value;
+    }
+
+    function getSafePlacesForSelectedProvince() {
+      const provinceName = getSelectedProvinceName();
+      const type = getSelectedSafeType();
+      const provinceData = safePlacesByProvince[provinceName] || {};
+      return provinceData[type] || [];
+    }
+
+    function setRouteMode(mode, el) {
+      currentRouteMode = mode;
+      document.querySelectorAll(".pill").forEach(btn => btn.classList.remove("active"));
+      el.classList.add("active");
+    }
+
+    function clearSafeMarkers() {
+      safePlaceMarkers.forEach(marker => map.removeLayer(marker));
+      safePlaceMarkers = [];
+    }
+
+    function showSafePlaces() {
+      clearSafeMarkers();
+      const places = getSafePlacesForSelectedProvince();
+
+      if (!places.length) return;
+
+      places.forEach(place => {
+        const marker = L.marker(place.coords).addTo(map).bindPopup(place.name);
+        safePlaceMarkers.push(marker);
+      });
+
+      const group = L.featureGroup(safePlaceMarkers);
+      map.fitBounds(group.getBounds(), { padding: [40, 40] });
+    }
+
+    function onProvinceChange() {
+      const data = getSelectedProvinceData();
+      currentStartPoint = data.center;
+
+      clearRoute();
+      clearFloodOnly();
+      clearSafeMarkers();
+      clearSteps();
+
+      if (userMarker) {
+        map.removeLayer(userMarker);
+        userMarker = null;
+      }
+
+      map.flyTo(data.center, data.zoom);
+      addStartMarker(data.center, "จุดเริ่มต้น: " + getSelectedProvinceName());
+      showSafePlaces();
+
+      updateRouteInfo("เลือกจังหวัดแล้ว กด CALCULATE SAFE ROUTE เพื่อคำนวณเส้นทาง");
+      document.getElementById("status-text").innerText = "READY TO SIMULATE";
+      document.getElementById("status-text").style.color = "#19c2ff";
+      document.getElementById("sub-status").innerText = getSelectedProvinceName() + " Emergency Safe Routing Demo";
+      document.getElementById("safetyScore").innerText = "--";
+      document.getElementById("riskLevelText").innerText = "--";
+    }
+
+    function addStartMarker(coords, text) {
+      if (startMarker) map.removeLayer(startMarker);
+      startMarker = L.marker(coords).addTo(map).bindPopup(text);
+    }
+
+    function addDestinationMarker(coords, text) {
+      if (safeMarker) map.removeLayer(safeMarker);
+      safeMarker = L.marker(coords).addTo(map).bindPopup(text);
+    }
+
+    function clearRoute() {
+      if (routeLine) {
+        map.removeLayer(routeLine);
+        routeLine = null;
+      }
+      if (startMarker) {
+        map.removeLayer(startMarker);
+        startMarker = null;
+      }
+      if (safeMarker) {
+        map.removeLayer(safeMarker);
+        safeMarker = null;
+      }
+      lastRouteDestination = null;
+    }
+
+    function clearFloodOnly() {
+      if (floodCircle) {
+        map.removeLayer(floodCircle);
+        floodCircle = null;
+      }
+      floodLayerVisible = false;
+    }
+
+    function resetMapView() {
+      clearRoute();
+      clearFloodOnly();
+      clearSafeMarkers();
+      clearSteps();
+
+      if (userMarker) {
+        map.removeLayer(userMarker);
+        userMarker = null;
+      }
+
+      document.getElementById("waterLevel").value = 0;
+      runSim();
+
+      document.getElementById("safetyScore").innerText = "--";
+      document.getElementById("riskLevelText").innerText = "--";
+      updateRouteInfo("รีเซ็ตแล้ว");
+      document.getElementById("status-text").innerText = "READY TO SIMULATE";
+      document.getElementById("status-text").style.color = "#19c2ff";
+      document.getElementById("sub-status").innerText = "Thailand Emergency Safe Routing Demo";
+      map.flyTo([15.87, 100.9925], 6);
+
+      setTimeout(() => onProvinceChange(), 600);
+    }
+
+    function runSim() {
+      const val = Number(document.getElementById("waterLevel").value);
+      const meters = (val / 100).toFixed(1);
+
+      document.getElementById("level-val").innerText = meters;
+      document.getElementById("water-fill").style.width = (val / 5) + "%";
+
+      const statusText = document.getElementById("status-text");
+      const riskMsg = document.getElementById("risk-msg");
+
+      if (meters > 3.0) {
+        statusText.innerText = "CRITICAL FLOODING";
+        statusText.style.color = "#ff4b2b";
+        riskMsg.innerText = "DANGER";
+        riskMsg.style.color = "#ff4b2b";
+      } else if (meters > 1.5) {
+        statusText.innerText = "FLOOD WARNING";
+        statusText.style.color = "#ffa500";
+        riskMsg.innerText = "WARNING";
+        riskMsg.style.color = "#ffa500";
+      } else {
+        statusText.innerText = "READY TO SIMULATE";
+        statusText.style.color = "#19c2ff";
+        riskMsg.innerText = "NORMAL";
+        riskMsg.style.color = "#2ecc71";
+      }
+
+      if (floodCircle && floodLayerVisible) {
+        floodCircle.setRadius(val * 10 + 200);
+      }
+    }
+
+    function toggleFloodLayer() {
+      const data = getSelectedProvinceData();
+      const val = Number(document.getElementById("waterLevel").value);
+
+      if (!floodLayerVisible) {
+        floodCircle = L.circle(data.flood, {
+          radius: val * 10 + 200,
+          color: "#19c2ff",
+          weight: 2,
+          fillColor: "#19c2ff",
+          fillOpacity: 0.22
+        }).addTo(map);
+        floodLayerVisible = true;
+        map.flyTo(data.flood, data.zoom);
+      } else {
+        clearFloodOnly();
+      }
+    }
+
+    function updateRouteInfo(text) {
+      document.getElementById("routeInfo").innerText = text;
+    }
+
+    function clearSteps() {
+      document.getElementById("stepsContainer").innerHTML = "";
+    }
+
+    function renderSteps(steps) {
+      const container = document.getElementById("stepsContainer");
+      container.innerHTML = "";
+
+      if (!steps || !steps.length) {
+        container.innerHTML = '<div class="step-item">ไม่มีรายละเอียดช่วงทาง</div>';
+        return;
+      }
+
+      steps.slice(0, 12).forEach((step, index) => {
+        const distanceKm = (step.distance / 1000).toFixed(2);
+        const name = step.name && step.name.trim() ? step.name : "ถนน/ทางเชื่อม";
+        const type = step.maneuver?.type || "เดินทางต่อ";
+        const modifier = step.maneuver?.modifier ? ` ${step.maneuver.modifier}` : "";
+        const div = document.createElement("div");
+        div.className = "step-item";
+        div.textContent = `${index + 1}. ${type}${modifier} • ${name} • ${distanceKm} km`;
+        container.appendChild(div);
+      });
+    }
+
+    function calculateSafetyScore(distanceKm, durationMin, waterLevel, mode) {
+      let score = 100;
+
+      score -= Math.min(distanceKm * 1.2, 22);
+      score -= Math.min(durationMin * 0.25, 18);
+      score -= Math.min(waterLevel * 8, 32);
+
+      if (mode === "safest") score += 8;
+      if (mode === "balanced") score += 3;
+      if (mode === "fastest") score -= 2;
+
+      score = Math.max(10, Math.min(99, Math.round(score)));
+      return score;
+    }
+
+    function getRiskLevelByScore(score) {
+      if (score >= 80) return { text: "LOW", color: "#2ecc71" };
+      if (score >= 60) return { text: "MEDIUM", color: "#ffa500" };
+      return { text: "HIGH", color: "#ff4b2b" };
+    }
+
+    function getRouteColor() {
+      if (currentRouteMode === "fastest") return "#19c2ff";
+      if (currentRouteMode === "safest") return "#2ecc71";
+      return "#ffa500";
+    }
+
+    function chooseDestination() {
+      const places = getSafePlacesForSelectedProvince();
+      if (!places.length) return null;
+
+      const start = currentStartPoint || getSelectedProvinceData().center;
+      const floodPoint = getSelectedProvinceData().flood;
+      const waterLevelMeters = Number(document.getElementById("waterLevel").value) / 100;
+
+      const scored = places.map(place => {
+        const dStart = map.distance(start, place.coords);
+        const dFlood = map.distance(floodPoint, place.coords);
+
+        let score = 0;
+
+        if (currentRouteMode === "fastest") {
+          score = dStart - dFlood * 0.15;
+        } else if (currentRouteMode === "safest") {
+          score = dStart * 0.75 - dFlood * 0.65 - waterLevelMeters * 80;
+        } else {
+          score = dStart * 0.9 - dFlood * 0.35;
+          }
+
+        return { ...place, rank: score };
+      });
+
+      scored.sort((a, b) => a.rank - b.rank);
+      return scored[0];
+    }
+
+    async function calculateRoute() {
+      const provinceName = getSelectedProvinceName();
+      const destination = chooseDestination();
+
+      clearRoute();
+      clearSteps();
+      showSafePlaces();
+
+      if (!destination) {
+        updateRouteInfo("ไม่พบจุดปลอดภัยในจังหวัดนี้");
+        return;
+      }
+
+      const start = currentStartPoint || getSelectedProvinceData().center;
+      lastRouteDestination = destination.coords;
+
+      addStartMarker(start, userMarker ? "ตำแหน่งปัจจุบันของคุณ" : "จุดเริ่มต้น: " + provinceName);
+      addDestinationMarker(destination.coords, destination.name);
+
+      updateRouteInfo("กำลังคำนวณเส้นทางถนนจริง...");
+
+      const startLat = start[0];
+      const startLng = start[1];
+      const safeLat = destination.coords[0];
+      const safeLng = destination.coords[1];
+
+      const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${safeLng},${safeLat}?overview=full&geometries=geojson&steps=true`;
+
+      try {
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (!result.routes || !result.routes.length) {
+          updateRouteInfo("ไม่พบเส้นทางถนนสำหรับจุดที่เลือก");
+          return;
+        }
+
+        const route = result.routes[0];
+        const coords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+        const distanceKm = Number((route.distance / 1000).toFixed(2));
+        const durationMin = Math.ceil(route.duration / 60);
+        const waterLevel = Number(document.getElementById("waterLevel").value) / 100;
+
+        if (routeLine) map.removeLayer(routeLine);
+        routeLine = L.polyline(coords, {
+          color: getRouteColor(),
+          weight: 6,
+          opacity: 0.92
+        }).addTo(map);
+
+        map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+
+        const safetyScore = calculateSafetyScore(distanceKm, durationMin, waterLevel, currentRouteMode);
+        const riskMeta = getRiskLevelByScore(safetyScore);
+
+        document.getElementById("safetyScore").innerText = safetyScore + "/100";
+        const riskText = document.getElementById("riskLevelText");
+        riskText.innerText = riskMeta.text;
+        riskText.style.color = riskMeta.color;
+
+        updateRouteInfo(
+          `จังหวัด: ${provinceName}
+ประเภทปลายทาง: ${document.getElementById("safeTypeSelect").selectedOptions[0].text}
+ปลายทาง: ${destination.name}
+โหมดเส้นทาง: ${document.querySelector(".pill.active").innerText}
+ระยะทางถนนจริง: ${distanceKm} km
+เวลาประมาณ: ${durationMin} นาที`
+        );
+
+        const steps = route.legs?.[0]?.steps || [];
+        renderSteps(steps);
+
+      } catch (error) {
+        console.error(error);
+        updateRouteInfo("เกิดข้อผิดพลาดในการดึงเส้นทาง อาจเป็นเพราะอินเทอร์เน็ตหรือ route service ไม่ตอบสนอง");
+      }
+    }
+
+    function openInGoogleMaps() {
+      if (!lastRouteDestination) {
+        alert("กรุณาคำนวณเส้นทางก่อน");
+        return;
+      }
+
+      const start = currentStartPoint || getSelectedProvinceData().center;
+      const url = `https://www.google.com/maps/dir/${start[0]},${start[1]}/${lastRouteDestination[0]},${lastRouteDestination[1]}`;
+      window.open(url, "_blank");
+    }
+
+    function useCurrentLocation() {
+      if (!navigator.geolocation) {
+        alert("อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          currentStartPoint = [lat, lng];
+
+          if (userMarker) {
+            map.removeLayer(userMarker);
+          }
+
+          userMarker = L.marker([lat, lng]).addTo(map).bindPopup("ตำแหน่งปัจจุบันของคุณ");
+          map.flyTo([lat, lng], 13);
+          addStartMarker([lat, lng], "ตำแหน่งปัจจุบันของคุณ");
+          updateRouteInfo("ใช้ตำแหน่งปัจจุบันแล้ว สามารถกดคำนวณเส้นทางต่อได้");
+          },
+        () => {
+          alert("ไม่สามารถดึงตำแหน่งปัจจุบันได้");
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function startFullSimulation() {
+      clearInterval(simulationInterval);
+      document.getElementById("waterLevel").value = 0;
+      runSim();
+
+      const data = getSelectedProvinceData();
+      if (!currentStartPoint) currentStartPoint = data.center;
+
+      map.flyTo(data.center, data.zoom);
+
+      if (!floodLayerVisible) {
+        toggleFloodLayer();
+      }
+
+      let i = 0;
+      simulationInterval = setInterval(async () => {
+        i += 10;
+        document.getElementById("waterLevel").value = i;
+        runSim();
+
+        if (i >= 400) {
+          clearInterval(simulationInterval);
+          await calculateRoute();
+        }
+      }, 150);
+    }
+
+    function setActiveIcon(el) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function goToHub() {
+      location.href = 'น้ำท่วม1.html';
+    }
+
+    function goToMap() {
+      location.href = 'map.html';
+    }
+
+    function goToAnalysis() {
+      location.href = 'analysis.html';
+    }
+
+    populateProvinceSelect();
+    initMap();
+    runSim();
+  </script>
+</body>
+</html>
