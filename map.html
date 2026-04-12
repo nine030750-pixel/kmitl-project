@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Sentinel - Geographic Area Analysis</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --panel-bg: rgba(10, 14, 23, 0.95); --accent: #00d2ff; --critical: #ff4b2b; --warning: #ffa500; --safe: #2ecc71; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Kanit', sans-serif; }
+        body, html { height: 100%; background: #000; overflow: hidden; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+ 
+        .side-panel {
+            position: absolute; top: 20px; left: 20px; width: 340px;
+            background: var(--panel-bg); backdrop-filter: blur(20px);
+            padding: 25px; border-radius: 24px; z-index: 1000; color: white;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+        }
+ 
+        .btn-back {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; padding: 12px; margin-top: 15px;
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px; color: white; text-decoration: none; font-size: 0.9rem;
+            transition: all 0.3s ease; cursor: pointer;
+        }
+        .btn-back:hover { background: var(--critical); border-color: var(--critical); }
+ 
+        .area-selector {
+            width: 100%; padding: 12px; background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(0,0,0,0.12); border-radius: 12px;
+            color: #000; margin-bottom: 20px; outline: none;
+        }
+        .area-selector option { color: #000; }
+ 
+        .slider-group { margin-bottom: 18px; }
+        .slider-group label { display: block; font-size: 0.8rem; opacity: 0.8; margin-bottom: 8px; }
+        input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+ 
+        .area-card {
+            background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 10px;
+        }
+        #areaName { color: var(--accent); font-size: 1.1rem; }
+        #areaRisk { font-size: 1.8rem; display: flex; align-items: baseline; gap: 8px; }
+ 
+        /* legend */
+        .impact-legend {
+            position: absolute; bottom: 30px; left: 20px; z-index: 1000;
+            background: rgba(10,14,23,0.88); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 14px;
+            padding: 12px 16px; color: white; font-size: 0.75rem; line-height: 1.9;
+        }
+        .impact-legend .leg-title {
+            font-size: 0.7rem; opacity: 0.5; letter-spacing: .06em;
+            text-transform: uppercase; margin-bottom: 6px;
+        }
+        .leg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; }
+ 
+        .geo-btn {
+            position: absolute; bottom: 30px; right: 30px; width: 50px; height: 50px;
+            background: var(--accent); color: #000; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; cursor: pointer; z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); transition: 0.3s;
+        }
+        .geo-btn:hover { transform: scale(1.1); background: #fff; }
+    </style>
+</head>
+<body>
+ 
+    <div class="side-panel">
+        <h3><i class="fas fa-search-location"></i> AREA MONITORING</h3>
+        <br>
+ 
+        <select id="locationSelect" class="area-selector" onchange="focusArea()">
+            <option value="all">แสดงทุกพื้นที่</option>
+            <option value="0">กรุงเทพฯ</option>
+            <option value="1">อยุธยา</option>
+            <option value="2">อุบลราชธานี</option>
+            <option value="3">สงขลา</option>
+            <option value="4">เชียงใหม่</option>
+            <option value="5">แม่สาย</option>
+        </select>
+ 
+        <div class="slider-group">
+            <label>ปริมาณน้ำฝน: <span id="rVal">0</span> mm</label>
+            <input type="range" id="rainSlider" min="0" max="400" value="100">
+        </div>
+ 
+        <div class="slider-group">
+            <label>ความลาดชัน: <span id="sVal">0</span> °</label>
+            <input type="range" id="slopeSlider" min="0" max="90" value="10">
+        </div>
+ 
+        <div class="slider-group">
+            <label>ความเข้มเลเยอร์ (Opacity): <span id="oVal">30</span>%</label>
+            <input type="range" id="opacitySlider" min="0" max="100" value="30">
+        </div>
+ 
+        <div class="area-card">
+            <p id="areaName">ภาพรวมระบบ</p>
+            <h1 id="areaRisk">0.0 <small style="font-size:0.9rem;">RISK</small></h1>
+            <p id="areaRadiusInfo" style="font-size: 0.75rem; opacity: 0.7;"></p>
+            <div id="typeLabel" style="font-size:0.7rem; color:rgba(255,255,255,0.4); margin-top:5px;">คลิกจุดใดก็ได้บนแผนที่เพื่อดูความเสี่ยงเฉพาะจุด</div>
+        </div>
+ 
+        <a href="น้ำท่วม1.html" class="btn-back">
+            <i class="fas fa-arrow-left"></i> ย้อนกลับ
+        </a>
+    </div>
+ 
+    <!-- IMPACT LEGEND -->
+    <div class="impact-legend">
+        <div class="leg-title">Impact radius</div>
+        <div><span class="leg-dot" style="background:#ff4b2b"></span>0 – 150 km &nbsp; วิกฤต</div>
+        <div><span class="leg-dot" style="background:#ffa500"></span>150 – 400 km &nbsp; เฝ้าระวัง</div>
+        <div><span class="leg-dot" style="background:#2ecc71"></span>400 – 700 km &nbsp; ปลอดภัย</div>
+    </div>
+ 
+    <div class="geo-btn" onclick="getLocation()" title="ตำแหน่งของฉัน">
+        <i class="fas fa-location-arrow"></i>
+    </div>
+ 
+    <div id="map"></div>
+ 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        /* ─── ข้อมูลพื้นที่เสี่ยง (เดิม) ─── */
+        const locations = [
+            { pos: [13.7563, 100.5018], name: "กรุงเทพฯ",      type: 'urban',    trigger: 0.5 },
+            { pos: [14.3532, 100.5681], name: "อยุธยา",          type: 'lowland',  trigger: 1.0 },
+            { pos: [15.2287, 104.8475], name: "อุบลราชธานี",     type: 'basin',    trigger: 3.5 },
+            { pos: [7.1898,  100.5954], name: "สงขลา",           type: 'basin',    trigger: 4.0 },
+            { pos: [18.7883, 98.9853],  name: "เชียงใหม่",       type: 'urban',    trigger: 1.5 },
+            { pos: [19.9101, 99.8305],  name: "แม่สาย",          type: 'mountain', trigger: 5.5 }
+        ];
+ 
+        const map = L.map('map', { zoomControl: false }).setView([13.7563, 100.5018], 6);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+ 
+        let userMarker;
+        let clickPopup = L.popup();
+ 
+        /* ─── ฟังก์ชันเดิม: Geolocation ─── */
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    if (userMarker) map.removeLayer(userMarker);
+                    userMarker = L.marker([lat, lon]).addTo(map)
+                        .bindPopup("<b>คุณอยู่ที่นี่</b>").openPopup();
+                    map.flyTo([lat, lon], 13);
+                }, () => { alert("ไม่สามารถเข้าถึงตำแหน่งของคุณได้"); });
+            }
+        }
+ 
+        /* ─── คำนวณระยะทาง km ระหว่าง 2 พิกัด (Haversine) ─── */
+        function distKm(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 +
+                      Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+ 
+        /* ─── Click-anywhere score (แก้ให้คำนวณตามระยะจาก zone จริง) ─── */
+        map.on('click', function(e) {
+            const rain  = parseInt(document.getElementById('rainSlider').value);
+            const slope = parseInt(document.getElementById('slopeSlider').value);
+            const clat  = e.latlng.lat, clng = e.latlng.lng;
+            const totalGlobalRisk = ((rain / 400) * 7 + (slope / 90) * 3);
+ 
+            /* หา zone ที่ active และใกล้ที่สุด */
+            let nearestZone = null, nearestDist = Infinity;
+            locations.forEach(loc => {
+                if (totalGlobalRisk >= loc.trigger) {
+                    const d = distKm(clat, clng, loc.pos[0], loc.pos[1]);
+                    if (d < nearestDist) { nearestDist = d; nearestZone = loc; }
+                }
+            });
+ 
+            let pointRisk, status, color, zoneName, extraInfo;
+ 
+            if (nearestZone && nearestDist <= 700) {
+                /* คำนวณ risk จาก zone ที่ใกล้ที่สุด + attenuate ตามระยะ */
+                const res = calculateRisk(rain, slope, nearestZone);
+                const baseDepth = parseFloat(res.depth);
+ 
+                /* ลดความเสี่ยงตามระยะ: ใกล้ = เต็ม, ไกล 700km = เหลือ 15% */
+                const attenuation = nearestDist <= 150 ? 1.0
+                                  : nearestDist <= 400 ? 1.0 - (nearestDist - 150) / 250 * 0.55
+                                  : 1.0 - (nearestDist - 150) / 550 * 0.85;
+                const adjDepth = (baseDepth * Math.max(attenuation, 0.15)).toFixed(2);
+ 
+                /* สี และ status ตามระยะ (ตรงกับสีจุด) */
+                if (nearestDist <= 150) {
+                    color = "#ff4b2b"; status = "วิกฤต";
+                } else if (nearestDist <= 400) {
+                    color = "#ffa500"; status = "เตือนภัย";
+                } else {
+                    color = "#2ecc71"; status = "ปลอดภัย";
+                }
+ 
+                pointRisk = adjDepth;
+                zoneName  = nearestZone.name;
+                extraInfo = `ใกล้ ${zoneName} ${Math.round(nearestDist)} km<br>${res.label}`;
+            } else {
+                /* ไกลจากทุก zone หรือ rain ต่ำมาก */
+                const raw = ((rain / 400) * 1.2 + (slope / 90) * 0.8).toFixed(2);
+                pointRisk = raw;
+                color     = "#2ecc71"; status = "ปลอดภัย";
+                extraInfo = "ห่างจากพื้นที่เสี่ยง";
+            }
+ 
+            clickPopup
+                .setLatLng(e.latlng)
+                .setContent(`
+                    <div style="text-align:center; font-family:sans-serif;">
+                        <b style="color:${color}; font-size:1.25rem;">ความเสี่ยง: ${pointRisk}</b><br>
+                        <span style="color:${color}; font-weight:600;">สถานะ: ${status}</span><br>
+                        <small style="color:#666;">${extraInfo}</small><br>
+                        <small style="color:#999;">พิกัด: ${clat.toFixed(4)}, ${clng.toFixed(4)}</small>
+                    </div>`)
+                .openOn(map);
+        });
+ 
+        /* ─── ฟังก์ชันเดิม: calculateRisk ─── */
+        function calculateRisk(rain, slope, loc) {
+            let mult = 1.0, label = "";
+            switch(loc.type) {
+                case 'urban':    mult = 1.6; label = "🏙️ เมือง (น้ำขัง)";   break;
+                case 'lowland':  mult = 1.4; label = "🌾 ที่ราบ (น้ำหลาก)"; break;
+                case 'basin':    mult = 1.3; label = "🌊 แอ่งน้ำ (น้ำล้น)"; break;
+                case 'mountain': mult = (slope > 30) ? 2.1 : 1.1; label = "⛰️ พื้นที่สูง (น้ำป่า)"; break;
+            }
+            const depth       = (rain * mult) / 85;
+            const radiusValue = 8000 + (depth * 12000);
+            return { depth: depth.toFixed(2), label, radiusMeters: radiusValue, radiusKm: (radiusValue / 1000).toFixed(2) };
+        }
+ 
+        /* ══════════════════════════════════════════════════════════════
+           ฟังก์ชันใหม่: วาด impact dot grid รอบแต่ละ risk zone
+           - วงในสุด  0–150 km → สีแดง   (#ff4b2b)
+           - วงกลาง 150–400 km → สีเหลือง (#ffa500)
+           - วงนอก  400–700 km → สีเขียว  (#2ecc71)
+           จำนวนจุดต่อวง scale ตาม depth (ยิ่งน้ำลึก ยิ่งมีจุดเยอะ)
+           ═══════════════════════════════════════════════════════════════ */
+ 
+        /* แปลง km → องศาละติจูด/ลองจิจูด (ประมาณ) */
+        function kmToLat(km) { return km / 111.0; }
+        function kmToLng(km, lat) { return km / (111.0 * Math.cos(lat * Math.PI / 180)); }
+ 
+        /* สุ่มจุดภายใน annulus (วงแหวน) รัศมี r1–r2 km รอบ center */
+        function randomDotsInRing(centerLat, centerLng, r1km, r2km, count) {
+            const dots = [];
+            for (let i = 0; i < count; i++) {
+                /* สุ่มระยะห่างแบบ uniform area distribution */
+                const r   = Math.sqrt(Math.random() * (r2km * r2km - r1km * r1km) + r1km * r1km);
+                const ang = Math.random() * 2 * Math.PI;
+                const dlat = kmToLat(r) * Math.sin(ang);
+                const dlng = kmToLng(r, centerLat) * Math.cos(ang);
+                dots.push([centerLat + dlat, centerLng + dlng]);
+            }
+            return dots;
+        }
+ 
+        let impactDotLayers = []; /* เก็บ layer group ทั้งหมดเพื่อล้างทีหลัง */
+ 
+        function drawImpactDots(activeLocations, depthMap, baseOpacity) {
+            /* ลบ layer เก่า */
+            impactDotLayers.forEach(l => map.removeLayer(l));
+            impactDotLayers = [];
+ 
+            activeLocations.forEach(loc => {
+                const depth = parseFloat(depthMap[loc.name]) || 0.1;
+ 
+                /* scale จำนวนจุดตาม depth (ยิ่งน้ำลึก ยิ่งมีผลกระทบมาก) */
+                const innerCount  = Math.round(18 + depth * 22);  /* 0–150 km */
+                const midCount    = Math.round(28 + depth * 18);  /* 150–400 km */
+                const outerCount  = Math.round(22 + depth * 10);  /* 400–700 km */
+ 
+                const [clat, clng] = loc.pos;
+ 
+                /* ── วงใน: สีแดง ── */
+                const innerDots = randomDotsInRing(clat, clng, 0, 150, innerCount);
+                innerDots.forEach(pos => {
+                    const r = Math.random() * 2200 + 1400;   /* รัศมีจุด 1.4–3.6 km */
+                    const layer = L.circle(pos, {
+                        radius: r,
+                        color: '#ff4b2b', fillColor: '#ff4b2b',
+                        fillOpacity: baseOpacity * (0.4 + Math.random() * 0.3),
+                        weight: 0, interactive: false
+                    }).addTo(map);
+                    impactDotLayers.push(layer);
+                });
+ 
+                /* ── วงกลาง: สีเหลือง ── */
+                const midDots = randomDotsInRing(clat, clng, 150, 400, midCount);
+                midDots.forEach(pos => {
+                    const r = Math.random() * 2800 + 1200;
+                    const layer = L.circle(pos, {
+                        radius: r,
+                        color: '#ffa500', fillColor: '#ffa500',
+                        fillOpacity: baseOpacity * (0.25 + Math.random() * 0.25),
+                        weight: 0, interactive: false
+                    }).addTo(map);
+                    impactDotLayers.push(layer);
+                });
+ 
+                /* ── วงนอก: สีเขียว ── */
+                const outerDots = randomDotsInRing(clat, clng, 400, 700, outerCount);
+                outerDots.forEach(pos => {
+                    const r = Math.random() * 3200 + 1400;
+                    const layer = L.circle(pos, {
+                        radius: r,
+                        color: '#2ecc71', fillColor: '#2ecc71',
+                        fillOpacity: baseOpacity * (0.15 + Math.random() * 0.2),
+                        weight: 0, interactive: false
+                    }).addTo(map);
+                    impactDotLayers.push(layer);
+                });
+            });
+        }
+ 
+        /* ─── ฟังก์ชันเดิม: updateSimulation (เพิ่ม drawImpactDots ต่อท้าย) ─── */
+        function updateSimulation() {
+            const rain     = parseInt(document.getElementById('rainSlider').value);
+            const slope    = parseInt(document.getElementById('slopeSlider').value);
+            const opacity  = parseInt(document.getElementById('opacitySlider').value) / 100;
+            const selectedIdx = document.getElementById('locationSelect').value;
+ 
+            document.getElementById('rVal').innerText = rain;
+            document.getElementById('sVal').innerText = slope;
+            document.getElementById('oVal').innerText = Math.round(opacity * 100);
+ 
+            map.eachLayer(l => { if (l instanceof L.Circle) map.removeLayer(l); });
+            impactDotLayers = []; /* sync เพราะ eachLayer ลบแล้ว */
+ 
+            const totalGlobalRisk = ((rain / 400) * 7 + (slope / 90) * 3).toFixed(1);
+ 
+            if (selectedIdx !== 'all') {
+                const loc = locations[parseInt(selectedIdx)];
+                const res = calculateRisk(rain, slope, loc);
+                document.getElementById('areaName').innerText = loc.name;
+                document.getElementById('areaRadiusInfo').innerText = `รัศมี: ${res.radiusKm} กม.`;
+                let color = res.depth > 1.5 ? "#ff4b2b" : (res.depth > 0.5 ? "#ffa500" : "#2ecc71");
+                document.getElementById('areaRisk').style.color = color;
+                document.getElementById('areaRisk').innerHTML = `${res.depth} <small>ม.</small>`;
+            }
+ 
+            /* วาด risk circles เดิม + เก็บ depth map สำหรับ impact dots */
+            const activeLocs = [];
+            const depthMap   = {};
+ 
+            locations.forEach(loc => {
+                if (totalGlobalRisk >= loc.trigger) {
+                    const res   = calculateRisk(rain, slope, loc);
+                    const color = res.depth > 1.5 ? "#ff4b2b" : (res.depth > 0.5 ? "#ffa500" : "#2ecc71");
+                    L.circle(loc.pos, {
+                        color, fillColor: color,
+                        fillOpacity: opacity,
+                        weight: 1,
+                        radius: res.radiusMeters
+                    }).addTo(map)
+                      .bindPopup(`<b>${loc.name}</b><br>ระดับน้ำ: ${res.depth} ม.<br>รัศมี: ${res.radiusKm} กม.`);
+ 
+                    activeLocs.push(loc);
+                    depthMap[loc.name] = res.depth;
+                }
+            });
+ 
+            /* ── วาด impact dots รอบทุก active zone ── */
+            if (activeLocs.length > 0) {
+                drawImpactDots(activeLocs, depthMap, opacity);
+            }
+        }
+ 
+        /* ─── ฟังก์ชันเดิม: focusArea ─── */
+        function focusArea() {
+            const val = document.getElementById('locationSelect').value;
+            if (val === 'all') map.flyTo([13.7563, 100.5018], 6);
+            else map.flyTo(locations[parseInt(val)].pos, 11);
+            updateSimulation();
+        }
+ 
+        document.getElementById('rainSlider').addEventListener('input', updateSimulation);
+        document.getElementById('slopeSlider').addEventListener('input', updateSimulation);
+        document.getElementById('opacitySlider').addEventListener('input', updateSimulation);
+        updateSimulation();
+    </script>
+</body>
+</html>
