@@ -265,7 +265,8 @@
       color: #000;
     }
 
-    .btn-secondary {background: rgba(255,255,255,0.08);
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
       color: #fff;
       border: 1px solid rgba(255,255,255,0.08);
     }
@@ -425,7 +426,7 @@
       <div class="nav-item" onclick="goToMap(); setActiveIcon(this)" title="ไปยังแผนที่"><i class="fas fa-map-location-dot"></i></div>
       <div class="nav-item" onclick="goToAnalysis(); setActiveIcon(this)" title="ไปยังหน้าวิเคราะห์"><i class="fas fa-chart-pie"></i></div>
       <div class="nav-item active" onclick="startFullSimulation(); setActiveIcon(this)" title="เริ่มจำลอง"><i class="fas fa-flask"></i></div>
-      </nav>
+    </nav>
 
     <div class="main-content">
       <div class="viewport-container">
@@ -492,6 +493,7 @@
             <div style="color:rgba(255,255,255,0.35); font-size:12px; text-align:center; padding:16px 0;">กด CALCULATE SAFE ROUTE เพื่อดูเส้นทางทางเลือก</div>
           </div>
         </div>
+
         <div class="feature-box">
           <h4>Flood Time-Lapse</h4>
           <p>จำลองระดับน้ำ 0 - 5 เมตร เพื่อแสดงขอบเขตเสี่ยงบนแผนที่</p>
@@ -570,152 +572,208 @@
       "สุราษฎร์ธานี": { center: [9.1382, 99.3215], flood: [9.1200, 99.3100], zoom: 11 }
     };
 
+    // ─── Safe places ───────────────────────────────────────────────────
+    // flood centers per province (copied from `provinces` object):
+    //   กรุงเทพฯ  [13.7440, 100.5160]   → safe places ≥ ~8 km away
+    //   เชียงใหม่ [18.7800, 98.9900]    → safe places ≥ ~8 km away
+    //   ขอนแก่น  [16.4300, 102.8400]   → safe places ≥ ~8 km away
+    //   สงขลา    [7.1800,  100.5800]   → safe places ≥ ~8 km away
+    //   ชลบุรี   [13.3500, 100.9800]   → safe places ≥ ~8 km away
+    //   นครราชสีมา[14.9700, 102.0900]  → safe places ≥ ~8 km away
+    //   ภูเก็ต   [7.8700,  98.3800]    → safe places ≥ ~8 km away
+    //   อุบลฯ    [15.2300, 104.8300]   → safe places ≥ ~8 km away
+    //   อุดรฯ    [17.4000, 102.7700]   → safe places ≥ ~8 km away
+    //   สุราษฎร์ [9.1200,  99.3100]    → safe places ≥ ~8 km away
+    // ───────────────────────────────────────────────────────────────────
     const safePlacesByProvince = {
       "กรุงเทพมหานคร": {
+        // flood @ [13.7440, 100.5160] — safe places pushed north & east, well outside
         shelter: [
-          { name: "ศูนย์อพยพดินแดง", coords: [13.7710, 100.5550] },
-          { name: "ศูนย์อพยพรัชดา", coords: [13.7900, 100.5740] },
-          { name: "ศูนย์อพยพจตุจักร", coords: [13.8130, 100.5580] }
+          { name: "ศูนย์อพยพดอนเมือง",      coords: [13.9200, 100.6050] },  // ดอนเมือง ~20 km N
+          { name: "ศูนย์อพยพมีนบุรี",        coords: [13.8150, 100.7200] }   // มีนบุรี ~17 km NE
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่าง A", coords: [13.7650, 100.5380] },
-          { name: "โรงพยาบาลตัวอย่าง B", coords: [13.7820, 100.5660] }
+          { name: "รพ.ภูมิพลอดุลยเดช",       coords: [13.9050, 100.5900] },  // ดอนเมือง
+          { name: "รพ.นวนคร",               coords: [14.0200, 100.6400] }   // ปทุมธานี ~30 km N
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่าง A", coords: [13.7480, 100.5270] },
-          { name: "สถานีตำรวจตัวอย่าง B", coords: [13.7930, 100.5480] }
+          { name: "สภ.ดอนเมือง",            coords: [13.9100, 100.5980] },
+          { name: "สภ.มีนบุรี",             coords: [13.8100, 100.7150] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่าง A", coords: [13.8040, 100.5820] },
-          { name: "พื้นที่สูงตัวอย่าง B", coords: [13.8210, 100.6030] }
+          { name: "พื้นที่สูงลาดกระบัง",     coords: [13.7250, 100.7750] },  // E — ห่างจากน้ำท่วม
+          { name: "พื้นที่สูงรังสิต",        coords: [14.0000, 100.6200] }   // N
         ]
       },
       "เชียงใหม่": {
+        // flood @ [18.7800, 98.9900] — safe places on highland east & south
         shelter: [
-          { name: "ศูนย์อพยพเมืองเชียงใหม่", coords: [18.7990, 99.0050] },
-          { name: "ศูนย์อพยพแม่เหียะ", coords: [18.7670, 98.9660] }
+          { name: "ศูนย์อพยพสันกำแพง",      coords: [18.7650, 99.1300] },   // ~13 km E
+          { name: "ศูนย์อพยพดอยสะเก็ด",     coords: [18.8800, 99.1500] }    // ~16 km NE
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างเชียงใหม่", coords: [18.7940, 99.0010] }
+          { name: "รพ.สันกำแพง",            coords: [18.7600, 99.1250] },
+          { name: "รพ.ดอยสะเก็ด",           coords: [18.8750, 99.1450] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างเชียงใหม่", coords: [18.8010, 98.9890] }
+          { name: "สภ.สันกำแพง",            coords: [18.7620, 99.1280] },
+          { name: "สภ.แม่ออน",              coords: [18.8200, 99.2100] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างเชียงใหม่", coords: [18.8210, 99.0300] }
+          { name: "พื้นที่สูงดอยสุเทพ",     coords: [18.8050, 98.9200] },   // W highland
+          { name: "พื้นที่สูงแม่ริม",       coords: [18.9300, 98.9600] }    // N highland
         ]
       },
       "ขอนแก่น": {
+        // flood @ [16.4300, 102.8400] — safe places SE & NW
         shelter: [
-          { name: "ศูนย์อพยพขอนแก่น 1", coords: [16.4570, 102.8610] },
-          { name: "ศูนย์อพยพขอนแก่น 2", coords: [16.4740, 102.8840] }
+          { name: "ศูนย์อพยพบ้านไผ่",       coords: [16.0700, 102.7200] },  // ~40 km S
+          { name: "ศูนย์อพยพชุมแพ",         coords: [16.5400, 102.1000] }   // ~65 km W
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างขอนแก่น", coords: [16.4430, 102.8290] }
+          { name: "รพ.บ้านไผ่",             coords: [16.0650, 102.7150] },
+          { name: "รพ.ชุมแพ",              coords: [16.5350, 102.0950] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างขอนแก่น", coords: [16.4490, 102.8440] }
-          ],
+          { name: "สภ.บ้านไผ่",             coords: [16.0680, 102.7180] },
+          { name: "สภ.ชุมแพ",              coords: [16.5380, 102.0980] }
+        ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างขอนแก่น", coords: [16.4840, 102.8960] }
+          { name: "พื้นที่สูงภูเวียง",       coords: [16.6500, 102.4200] },  // NW highland
+          { name: "พื้นที่สูงอุบลรัตน์",     coords: [16.7100, 102.7600] }   // N highland
         ]
       },
       "สงขลา": {
+        // flood @ [7.1800, 100.5800] — safe places on hills north & inland west
         shelter: [
-          { name: "ศูนย์อพยพสงขลา", coords: [7.2120, 100.6170] }
+          { name: "ศูนย์อพยพหาดใหญ่เหนือ",  coords: [7.0900, 100.4600] },   // ~14 km SW inland
+          { name: "ศูนย์อพยพสะเดา",         coords: [6.6500, 100.4200] }    // ~60 km S inland
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างสงขลา", coords: [7.2040, 100.6020] }
+          { name: "รพ.หาดใหญ่",             coords: [7.0080, 100.4750] },
+          { name: "รพ.สงขลานครินทร์",        coords: [7.0060, 100.4990] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างสงขลา", coords: [7.1930, 100.5980] }
+          { name: "สภ.หาดใหญ่",             coords: [7.0100, 100.4780] },
+          { name: "สภ.สะเดา",              coords: [6.6520, 100.4220] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างสงขลา", coords: [7.2350, 100.6410] }
+          { name: "พื้นที่สูงเขาน้ำค้าง",    coords: [7.3500, 100.4000] },   // N highland
+          { name: "พื้นที่สูงคลองหอยโข่ง",   coords: [6.9200, 100.5400] }
         ]
       },
       "ชลบุรี": {
+        // flood @ [13.3500, 100.9800] — safe places east toward inland hills
         shelter: [
-          { name: "ศูนย์อพยพชลบุรี", coords: [13.3860, 101.0170] }
+          { name: "ศูนย์อพยพบ่อทอง",        coords: [13.4500, 101.3500] },  // ~38 km E
+          { name: "ศูนย์อพยพหนองใหญ่",      coords: [13.2200, 101.2000] }   // ~22 km SE
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างชลบุรี", coords: [13.3540, 100.9890] }
+          { name: "รพ.พนัสนิคม",            coords: [13.4450, 101.1850] },
+          { name: "รพ.บ่อทอง",              coords: [13.4480, 101.3480] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างชลบุรี", coords: [13.3720, 101.0040] }
+          { name: "สภ.พนัสนิคม",            coords: [13.4430, 101.1830] },
+          { name: "สภ.บ่อทอง",              coords: [13.4460, 101.3460] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างชลบุรี", coords: [13.3980, 101.0360] }
+          { name: "พื้นที่สูงเขาเขียว",      coords: [13.2800, 101.1200] },
+          { name: "พื้นที่สูงบ่อทอง",        coords: [13.4550, 101.3600] }
         ]
       },
       "นครราชสีมา": {
+        // flood @ [14.9700, 102.0900] — safe places SE & N on plateau edge
         shelter: [
-          { name: "ศูนย์อพยพโคราช", coords: [15.0030, 102.1300] }
+          { name: "ศูนย์อพยพปักธงชัย",      coords: [14.6000, 102.1000] },  // ~40 km S
+          { name: "ศูนย์อพยพสูงเนิน",       coords: [14.8900, 101.8500] }   // ~25 km SW
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างโคราช", coords: [14.9920, 102.1080] }
+          { name: "รพ.ปักธงชัย",            coords: [14.5950, 102.0950] },
+          { name: "รพ.สูงเนิน",             coords: [14.8850, 101.8450] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างโคราช", coords: [14.9850, 102.0900] }
+          { name: "สภ.ปักธงชัย",            coords: [14.5970, 102.0970] },
+          { name: "สภ.สูงเนิน",             coords: [14.8870, 101.8470] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างโคราช", coords: [15.0260, 102.1570] }
+          { name: "พื้นที่สูงเขาใหญ่",       coords: [14.4300, 101.3700] },  // SW highland
+          { name: "พื้นที่สูงปากช่อง",       coords: [14.7200, 101.4300] }
         ]
       },
       "ภูเก็ต": {
+        // flood @ [7.8700, 98.3800] — island; safe places on NE high ground
         shelter: [
-          { name: "ศูนย์อพยพภูเก็ต", coords: [7.8970, 98.4100] }
+          { name: "ศูนย์อพยพถลาง",          coords: [8.0700, 98.3050] },    // ~22 km N highland
+          { name: "ศูนย์อพยพป่าตอง (สูง)",   coords: [7.9000, 98.2800] }    // W highland
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างภูเก็ต", coords: [7.8850, 98.3970] }
+          { name: "รพ.ถลาง",               coords: [8.0650, 98.3000] },
+          { name: "รพ.วชิระภูเก็ต",          coords: [7.9900, 98.3500] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างภูเก็ต", coords: [7.8770, 98.3890] }
+          { name: "สภ.ถลาง",               coords: [8.0680, 98.3030] },
+          { name: "สภ.ป่าตอง",              coords: [7.8950, 98.2950] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างภูเก็ต", coords: [7.9230, 98.4410] }
+          { name: "พื้นที่สูงเขาพระแทว",     coords: [7.9850, 98.3650] },
+          { name: "พื้นที่สูงบางเทา",        coords: [8.0200, 98.2900] }
         ]
       },
       "อุบลราชธานี": {
+        // flood @ [15.2300, 104.8300] — safe places W & NW away from Mun river
         shelter: [
-          { name: "ศูนย์อพยพอุบล", coords: [15.2730, 104.8790] }
+          { name: "ศูนย์อพยพเดชอุดม",       coords: [14.9700, 104.9200] },  // ~30 km S
+          { name: "ศูนย์อพยพพิบูลมังสาหาร",  coords: [15.2450, 105.2200] }  // ~35 km E highland
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างอุบล", coords: [15.2510, 104.8540] }
+          { name: "รพ.เดชอุดม",             coords: [14.9650, 104.9150] },
+          { name: "รพ.พิบูลมังสาหาร",        coords: [15.2400, 105.2150] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างอุบล", coords: [15.2440, 104.8390] }
+          { name: "สภ.เดชอุดม",             coords: [14.9670, 104.9170] },
+          { name: "สภ.พิบูลมังสาหาร",        coords: [15.2420, 105.2170] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างอุบล", coords: [15.2920, 104.9070] }
+          { name: "พื้นที่สูงศรีเมืองใหม่",   coords: [15.5500, 105.0100] },
+          { name: "พื้นที่สูงโขงเจียม",       coords: [15.3600, 105.5100] }
         ]
       },
       "อุดรธานี": {
+        // flood @ [17.4000, 102.7700] — safe places NE & S away from Nong Han
         shelter: [
-          { name: "ศูนย์อพยพอุดร", coords: [17.4400, 102.8230] }
+          { name: "ศูนย์อพยพกุมภวาปี",       coords: [17.1000, 103.0000] },  // ~36 km SE
+          { name: "ศูนย์อพยพบ้านผือ",        coords: [17.6900, 102.4900] }   // ~40 km NW
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างอุดร", coords: [17.4170, 102.7920] }
+          { name: "รพ.กุมภวาปี",            coords: [17.0950, 103.0050] },
+          { name: "รพ.บ้านผือ",             coords: [17.6850, 102.4950] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างอุดร", coords: [17.4070, 102.7800] }
+          { name: "สภ.กุมภวาปี",            coords: [17.0970, 103.0030] },
+          { name: "สภ.บ้านผือ",             coords: [17.6870, 102.4970] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างอุดร", coords: [17.4580, 102.8480] }
+          { name: "พื้นที่สูงภูพาน",          coords: [17.6000, 103.2000] },
+          { name: "พื้นที่สูงน้ำโสม",         coords: [17.7800, 102.1700] }
         ]
       },
       "สุราษฎร์ธานี": {
+        // flood @ [9.1200, 99.3100] — safe places N & E away from Tapi river
         shelter: [
-          { name: "ศูนย์อพยพสุราษฎร์", coords: [9.1640, 99.3520] }
+          { name: "ศูนย์อพยพพุนพิน (สูง)",   coords: [9.1050, 99.1800] },    // ~13 km W highland
+          { name: "ศูนย์อพยพเกาะสมุย (สูง)", coords: [9.5400, 100.0600] }   // เกาะสมุย highland
         ],
         hospital: [
-          { name: "โรงพยาบาลตัวอย่างสุราษฎร์", coords: [9.1420, 99.3260] }
+          { name: "รพ.พุนพิน",              coords: [9.1000, 99.1750] },
+          { name: "รพ.เกาะสมุย",            coords: [9.5200, 100.0600] }
         ],
         police: [
-          { name: "สถานีตำรวจตัวอย่างสุราษฎร์", coords: [9.1320, 99.3140] }
+          { name: "สภ.พุนพิน",              coords: [9.1020, 99.1770] },
+          { name: "สภ.เกาะสมุย",            coords: [9.5220, 100.0620] }
         ],
         highground: [
-          { name: "พื้นที่สูงตัวอย่างสุราษฎร์", coords: [9.1850, 99.3710] }
+          { name: "พื้นที่สูงเขาสก",          coords: [8.9200, 98.8000] },    // NW highland
+          { name: "พื้นที่สูงดอนสัก",         coords: [9.3100, 99.6900] }
         ]
       }
     };
@@ -779,7 +837,6 @@
       document.querySelectorAll(".pill").forEach(btn => btn.classList.remove("active"));
       el.classList.add("active");
 
-      // If routes already computed, filter to show only this mode's routes
       if (allComputedRoutes.length > 0) {
         activeRouteIndex = -1;
         const visibleIndices = getIndicesForMode(mode);
@@ -991,19 +1048,16 @@
       });
     }
 
-    function calculateSafetyScore(distanceKm, durationMin, waterLevel, mode) {
+    function calculateAltSafetyScore(distanceKm, durationMin, waterLevel, floodPenalty, mode) {
       let score = 100;
-
       score -= Math.min(distanceKm * 1.2, 22);
       score -= Math.min(durationMin * 0.25, 18);
       score -= Math.min(waterLevel * 8, 32);
-
+      score -= Math.round(floodPenalty * 28);
       if (mode === "safest") score += 8;
       if (mode === "balanced") score += 3;
       if (mode === "fastest") score -= 2;
-
-      score = Math.max(10, Math.min(99, Math.round(score)));
-      return score;
+      return Math.max(10, Math.min(99, Math.round(score)));
     }
 
     function getRiskLevelByScore(score) {
@@ -1012,52 +1066,68 @@
       return { text: "HIGH", color: "#ff4b2b" };
     }
 
-    function getRouteColor() {
-      if (currentRouteMode === "fastest") return "#19c2ff";
-      if (currentRouteMode === "safest") return "#2ecc71";
-      return "#ffa500";
-    }
-
-    function chooseDestination() {
-      const places = getSafePlacesForSelectedProvince();
+    // ─────────────────────────────────────────────────────────────────
+    // Route A → rank 0 ของ type ที่เลือก (สถานที่เดิมที่มีอยู่แล้ว)
+    // Route B → rank 1 ของ type เดียวกัน (สถานที่ถัดไปในประเภทเดียวกัน)
+    // ใช้กับทุก mode (fastest / balanced / safest) เหมือนกันทั้งหมด
+    // สถานที่ในเขตน้ำท่วมถูก penalty สูงมาก → ไม่ถูกเลือก
+    // ─────────────────────────────────────────────────────────────────
+    function chooseDestinationForRoute(routeIndex) {
+      const places     = getSafePlacesForSelectedProvince();
       if (!places.length) return null;
 
-      const start = currentStartPoint || getSelectedProvinceData().center;
+      const start      = currentStartPoint || getSelectedProvinceData().center;
       const floodPoint = getSelectedProvinceData().flood;
-      const waterLevelMeters = Number(document.getElementById("waterLevel").value) / 100;
+      const waterLevel = Number(document.getElementById("waterLevel").value) / 100;
+      const floodRadius = waterLevel * 10 + 200;
+      const modeForIndex = routeModeMap[routeIndex];
 
+      // Score every place (flood-zone places get 1e9 → never picked)
       const scored = places.map(place => {
         const dStart = map.distance(start, place.coords);
         const dFlood = map.distance(floodPoint, place.coords);
+        const inFloodZone  = dFlood < floodRadius;
+        const floodPenalty = inFloodZone ? 1e9 : Math.max(0, 1 - dFlood / (floodRadius * 3)) * 3000;
 
         let score = 0;
-
-        if (currentRouteMode === "fastest") {
-          score = dStart - dFlood * 0.15;
-        } else if (currentRouteMode === "safest") {
-          score = dStart * 0.75 - dFlood * 0.65 - waterLevelMeters * 80;
+        if (modeForIndex === "fastest") {
+          score = dStart + floodPenalty;
+        } else if (modeForIndex === "safest") {
+          score = dStart * 0.5 - dFlood * 0.9 + floodPenalty;
         } else {
-          score = dStart * 0.9 - dFlood * 0.35;
-          }
-
-        return { ...place, rank: score };
+          score = dStart * 0.8 - dFlood * 0.4 + floodPenalty;
+        }
+        return { ...place, _score: score };
       });
 
-      scored.sort((a, b) => a.rank - b.rank);
-      return scored[0];
+      scored.sort((a, b) => a._score - b._score);
+
+      // A route (positionInMode === 0) → rank 0
+      // B route (positionInMode === 1) → rank 1 (ถ้ามี ไม่งั้น rank 0)
+      const modeIndices    = getIndicesForMode(modeForIndex);
+      const positionInMode = modeIndices.indexOf(routeIndex); // 0 = A, 1 = B
+      const pickIndex      = Math.min(positionInMode, scored.length - 1);
+
+      return scored[pickIndex];
     }
 
-    // Generate offset waypoints — 6 variants with diverse detours
+    // Generate offset waypoints — 6 variants with well-spread detours
+    // A routes (even index) take a left-leaning detour,
+    // B routes (odd index) take a right-leaning detour,
+    // ensuring the two paths in each mode-pair diverge visually.
     function getWaypointVariants(start, end, index) {
       const midLat = (start[0] + end[0]) / 2;
       const midLng = (start[1] + end[1]) / 2;
+      // Spread increases with mode index so all 6 paths look distinct
+      const spreads = [0.06, 0.08, 0.07, 0.09, 0.08, 0.10];
+      const sp = spreads[index] || 0.06;
       const offsetOptions = [
-        null,                                                              // 0: direct
-        { lat: midLat + 0.04, lng: midLng - 0.04 },                      // 1: northwest detour
-        { lat: midLat - 0.04, lng: midLng + 0.04 },                      // 2: southeast detour
-        { lat: midLat + 0.07, lng: midLng + 0.03 },                      // 3: northeast detour
-        { lat: midLat - 0.06, lng: midLng - 0.05 },                      // 4: southwest detour
-        { lat: midLat + 0.02, lng: midLng + 0.07 },                      // 5: east detour
+        { lat: midLat + sp,      lng: midLng - sp * 0.5 },  // 0 fastest A  → NW
+        { lat: midLat - sp * 0.6, lng: midLng + sp },        // 1 fastest B  → SE
+        { lat: midLat + sp,      lng: midLng + sp * 0.5 },  // 2 balanced A → NE
+        { lat: midLat - sp * 0.5, lng: midLng - sp },        // 3 balanced B → SW
+        { lat: midLat + sp * 0.4, lng: midLng + sp },        // 4 safest A   → E
+        { lat: midLat - sp,      lng: midLng - sp * 0.4 },  // 5 safest B   → W
       ];
       return offsetOptions[index] || null;
     }
@@ -1074,19 +1144,7 @@
           maxPenalty = Math.max(maxPenalty, overlap);
         }
       }
-      return maxPenalty; // 0–1
-    }
-
-    function calculateAltSafetyScore(distanceKm, durationMin, waterLevel, floodPenalty, mode) {
-      let score = 100;
-      score -= Math.min(distanceKm * 1.2, 22);
-      score -= Math.min(durationMin * 0.25, 18);
-      score -= Math.min(waterLevel * 8, 32);
-      score -= Math.round(floodPenalty * 28); // flood overlap penalty
-      if (mode === "safest") score += 8;
-      if (mode === "balanced") score += 3;
-      if (mode === "fastest") score -= 2;
-      return Math.max(10, Math.min(99, Math.round(score)));
+      return maxPenalty;
     }
 
     function highlightRoute(index) {
@@ -1097,7 +1155,6 @@
         if (!layer) return;
 
         if (i === index) {
-          // Show only selected route — thick, bright
           if (!map.hasLayer(layer.border)) layer.border.addTo(map);
           if (!map.hasLayer(layer.main)) layer.main.addTo(map);
           layer.border.setStyle({ weight: 14, opacity: 0.65, color: '#ffffff' });
@@ -1105,7 +1162,6 @@
           layer.border.bringToFront();
           layer.main.bringToFront();
         } else {
-          // Hide all other routes
           if (map.hasLayer(layer.border)) map.removeLayer(layer.border);
           if (map.hasLayer(layer.main)) map.removeLayer(layer.main);
         }
@@ -1169,7 +1225,7 @@
         </button>`;
 
       container.innerHTML = showAllBtn + modeRoutes.map((r, localIdx) => {
-        const i = visibleIndices[localIdx]; // real index
+        const i = visibleIndices[localIdx];
         return `
         <div onclick="highlightRoute(${i})" style="
           cursor:pointer;
@@ -1212,43 +1268,54 @@
       return result?.routes?.[0] || null;
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // FIX 2: calculateRoute
+    // Each of the 6 routes now resolves its own destination via
+    // chooseDestinationForRoute(i), so destinations differ across
+    // modes AND within each mode pair (A vs B).
+    // A single start-marker and per-route destination markers are shown.
+    // ─────────────────────────────────────────────────────────────────
     async function calculateRoute() {
-      const destination = chooseDestination();
       clearRoute();
       clearSteps();
       showSafePlaces();
 
-      if (!destination) {
-        updateRouteInfo("ไม่พบจุดปลอดภัยในจังหวัดนี้");
-        return;
-      }
-
-      const start = currentStartPoint || getSelectedProvinceData().center;
+      const start      = currentStartPoint || getSelectedProvinceData().center;
       const floodPoint = getSelectedProvinceData().flood;
       const waterLevel = Number(document.getElementById("waterLevel").value) / 100;
 
+      // Always show a start marker
       addStartMarker(start, "จุดเริ่มต้น: " + getSelectedProvinceName());
-      addDestinationMarker(destination.coords, destination.name);
       updateRouteInfo("กำลังคำนวณเส้นทางทางเลือก 6 เส้น...");
+
+      // Destination markers per route (different colours to match routes)
+      const destMarkers = [];
 
       const routeResults = [];
 
-      // Fetch 6 routes with diverse waypoints
       for (let i = 0; i < 6; i++) {
         try {
-          const wp = getWaypointVariants(start, destination.coords, i);
-          const route = await fetchOsrmRoute(start[0], start[1], destination.coords[0], destination.coords[1], wp);
+          // ← KEY CHANGE: each route picks its own destination
+          const destination = chooseDestinationForRoute(i);
+          if (!destination) continue;
+
+          const wp    = getWaypointVariants(start, destination.coords, i);
+          const route = await fetchOsrmRoute(
+            start[0], start[1],
+            destination.coords[0], destination.coords[1],
+            wp
+          );
           if (!route) continue;
 
-          const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-          const distanceKm = Number((route.distance / 1000).toFixed(2));
+          const coords      = route.geometry.coordinates.map(c => [c[1], c[0]]);
+          const distanceKm  = Number((route.distance / 1000).toFixed(2));
           const durationMin = Math.ceil(route.duration / 60);
-          const floodPenalty = getFloodPenalty(coords, floodPoint, waterLevel);
-          const safetyScore = calculateAltSafetyScore(distanceKm, durationMin, waterLevel, floodPenalty, currentRouteMode);
-          const riskMeta = getRiskLevelByScore(safetyScore);
-          const steps = route.legs?.[0]?.steps || [];
+          const floodPenalty  = getFloodPenalty(coords, floodPoint, waterLevel);
+          const safetyScore   = calculateAltSafetyScore(distanceKm, durationMin, waterLevel, floodPenalty, routeModeMap[i]);
+          const riskMeta      = getRiskLevelByScore(safetyScore);
+          const steps         = route.legs?.[0]?.steps || [];
 
-          // Draw each route as TWO layered polylines: white border underneath + colored line on top
+          // Draw route as two layered polylines
           const borderLine = L.polyline(coords, {
             color: '#ffffff',
             weight: 10,
@@ -1264,7 +1331,27 @@
           }).addTo(map);
 
           altRouteLines.push({ main: line, border: borderLine, color: routeColors[i] });
-          routeResults.push({ distanceKm, durationMin, safetyScore, riskMeta, steps, destination, color: routeColors[i], coords });
+
+          // Place a small coloured destination marker for each route
+          const destIcon = L.divIcon({
+            className: '',
+            html: `<div style="
+              width:14px; height:14px; border-radius:50%;
+              background:${routeColors[i]}; border:2px solid #fff;
+              box-shadow:0 0 6px ${routeColors[i]};
+            "></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
+          });
+          const dm = L.marker(destination.coords, { icon: destIcon })
+            .addTo(map)
+            .bindPopup(`Route ${i+1} (${routeLabels[i]})<br>${destination.name}`);
+          destMarkers.push(dm);
+
+          routeResults.push({
+            distanceKm, durationMin, safetyScore, riskMeta,
+            steps, destination, color: routeColors[i], coords
+          });
         } catch (e) {
           console.warn("Route " + i + " failed:", e);
         }
@@ -1276,17 +1363,22 @@
       }
 
       allComputedRoutes = routeResults;
-      activeRouteIndex = -1;
-      map.fitBounds(altRouteLines[0].main.getBounds(), { padding: [40, 40] });
+      activeRouteIndex  = -1;
 
-      // Show only current mode's routes on map
+      // Fit map to all visible route lines
+      const allLatLngs = routeResults.flatMap(r => r.coords);
+      if (allLatLngs.length) {
+        map.fitBounds(L.latLngBounds(allLatLngs), { padding: [40, 40] });
+      }
+
+      // Hide routes that don't belong to the current mode
       const visibleIndices = getIndicesForMode(currentRouteMode);
       allComputedRoutes.forEach((r, i) => {
         const layer = altRouteLines[i];
         if (!layer) return;
         if (!visibleIndices.includes(i)) {
           if (map.hasLayer(layer.border)) map.removeLayer(layer.border);
-          if (map.hasLayer(layer.main)) map.removeLayer(layer.main);
+          if (map.hasLayer(layer.main))   map.removeLayer(layer.main);
         }
       });
 
@@ -1325,7 +1417,7 @@
           map.flyTo([lat, lng], 13);
           addStartMarker([lat, lng], "ตำแหน่งปัจจุบันของคุณ");
           updateRouteInfo("ใช้ตำแหน่งปัจจุบันแล้ว สามารถกดคำนวณเส้นทางต่อได้");
-          },
+        },
         () => {
           alert("ไม่สามารถดึงตำแหน่งปัจจุบันได้");
         },
@@ -1381,7 +1473,6 @@
     initMap();
     runSim();
 
-    // Move status overlay to top-right after 5 seconds
     setTimeout(() => {
       document.querySelector('.map-overlay-center').classList.add('moved');
     }, 5000);
