@@ -404,6 +404,12 @@
       font-size: 10px;
     }
 
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(255,75,43,0.7); }
+      70%  { box-shadow: 0 0 0 8px rgba(255,75,43,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,75,43,0); }
+    }
+
     @media (max-width: 1200px) {
       .main-content {
         grid-template-columns: 1fr;
@@ -487,6 +493,7 @@
             <div class="legend-item"><span class="dot" style="background:#19c2ff;"></span> เร็วสุด A &nbsp;<span class="dot" style="background:#38bdf8;"></span> เร็วสุด B</div>
             <div class="legend-item"><span class="dot" style="background:#ffa500;"></span> สมดุล A &nbsp;<span class="dot" style="background:#fb923c;"></span> สมดุล B</div>
             <div class="legend-item"><span class="dot" style="background:#2ecc71;"></span> ปลอดภัยสุด A &nbsp;<span class="dot" style="background:#86efac;"></span> ปลอดภัยสุด B</div>
+            <div class="legend-item"><span class="dot" style="background:#ff4b2b;"></span> Real-Time (OSRM live)</div>
           </div>
 
           <div id="altRoutesContainer" style="margin-top:10px;">
@@ -560,16 +567,58 @@
     let activeRouteIndex = 0;
 
     const provinces = {
-      "กรุงเทพมหานคร": { center: [13.7563, 100.5018], flood: [13.7440, 100.5160], zoom: 11 },
-      "เชียงใหม่": { center: [18.7883, 98.9853], flood: [18.7800, 98.9900], zoom: 11 },
-      "ขอนแก่น": { center: [16.4419, 102.8350], flood: [16.4300, 102.8400], zoom: 11 },
-      "สงขลา": { center: [7.1897, 100.5951], flood: [7.1800, 100.5800], zoom: 11 },
-      "ชลบุรี": { center: [13.3611, 100.9847], flood: [13.3500, 100.9800], zoom: 11 },
-      "นครราชสีมา": { center: [14.9799, 102.0977], flood: [14.9700, 102.0900], zoom: 11 },
-      "ภูเก็ต": { center: [7.8804, 98.3923], flood: [7.8700, 98.3800], zoom: 11 },
-      "อุบลราชธานี": { center: [15.2447, 104.8473], flood: [15.2300, 104.8300], zoom: 11 },
-      "อุดรธานี": { center: [17.4138, 102.7870], flood: [17.4000, 102.7700], zoom: 11 },
-      "สุราษฎร์ธานี": { center: [9.1382, 99.3215], flood: [9.1200, 99.3100], zoom: 11 }
+      // center = ใจกลางเมือง (ตัวจังหวัด)
+      // flood  = พื้นที่เสี่ยงน้ำท่วมจริงในเขตเมือง ไม่ใช่ทะเล/นอกเมือง
+      "กรุงเทพมหานคร": {
+        center: [13.7563, 100.5018],
+        flood:  [13.7500, 100.5000],  // เกาะรัตนโกสินทร์ / บางรัก / คลองสาน
+        zoom: 11
+      },
+      "เชียงใหม่": {
+        center: [18.7883, 98.9853],
+        flood:  [18.7900, 98.9950],   // ริมแม่น้ำปิง ย่านท่าแพ / วโรรส
+        zoom: 12
+      },
+      "ขอนแก่น": {
+        center: [16.4322, 102.8236],
+        flood:  [16.4350, 102.8150],  // บึงแก่นนคร / ย่านกลางเมือง
+        zoom: 12
+      },
+      "สงขลา": {
+        center: [7.0067,  100.4734],  // ตัวเมืองหาดใหญ่
+        flood:  [7.0080,  100.4760],  // ตลาดหาดใหญ่ / คลองอู่ตะเภา
+        zoom: 12
+      },
+      "ชลบุรี": {
+        center: [13.3611, 100.9847],
+        flood:  [13.3650, 100.9830],  // ใจกลางเมืองชลบุรี ริมอ่าว (บนบก)
+        zoom: 12
+      },
+      "นครราชสีมา": {
+        center: [14.9799, 102.0977],
+        flood:  [14.9730, 102.1050],  // ลำตะคอง / ในตัวเมืองโคราช
+        zoom: 12
+      },
+      "ภูเก็ต": {
+        center: [7.8804,  98.3923],
+        flood:  [7.8800,  98.3950],   // ย่านเมืองภูเก็ต / ถนนถลาง
+        zoom: 13
+      },
+      "อุบลราชธานี": {
+        center: [15.2287, 104.8561],
+        flood:  [15.2300, 104.8500],  // ริมแม่น้ำมูล ใจกลางอุบล
+        zoom: 12
+      },
+      "อุดรธานี": {
+        center: [17.4138, 102.7870],
+        flood:  [17.4100, 102.7850],  // หนองประจักษ์ / ใจกลางอุดร
+        zoom: 12
+      },
+      "สุราษฎร์ธานี": {
+        center: [9.1382,  99.3215],
+        flood:  [9.1350,  99.3300],   // ริมแม่น้ำตาปี ตัวเมืองสุราษฎร์
+        zoom: 12
+      }
     };
 
     // ─── Safe places ───────────────────────────────────────────────────
@@ -644,22 +693,22 @@
         ]
       },
       "สงขลา": {
-        // flood @ [7.1800, 100.5800] — safe places on hills north & inland west
+        // flood @ หาดใหญ่ [7.008, 100.476] — safe places บนเนินเขาและนอกเมือง
         shelter: [
-          { name: "ศูนย์อพยพหาดใหญ่เหนือ",  coords: [7.0900, 100.4600] },   // ~14 km SW inland
-          { name: "ศูนย์อพยพสะเดา",         coords: [6.6500, 100.4200] }    // ~60 km S inland
+          { name: "ศูนย์อพยพคอหงส์ (มอ.)",   coords: [7.0060, 100.5000] },  // ~3 km E บนสูง
+          { name: "ศูนย์อพยพสะเดา",           coords: [6.6500, 100.4200] }   // ~40 km S
         ],
         hospital: [
-          { name: "รพ.หาดใหญ่",             coords: [7.0080, 100.4750] },
-          { name: "รพ.สงขลานครินทร์",        coords: [7.0060, 100.4990] }
+          { name: "รพ.สงขลานครินทร์",          coords: [7.0060, 100.4990] },  // บนเนินคอหงส์
+          { name: "รพ.หาดใหญ่",               coords: [7.0080, 100.4750] }
         ],
         police: [
-          { name: "สภ.หาดใหญ่",             coords: [7.0100, 100.4780] },
-          { name: "สภ.สะเดา",              coords: [6.6520, 100.4220] }
+          { name: "สภ.คอหงส์",                coords: [7.0050, 100.4980] },
+          { name: "สภ.สะเดา",                 coords: [6.6520, 100.4220] }
         ],
         highground: [
-          { name: "พื้นที่สูงเขาน้ำค้าง",    coords: [7.3500, 100.4000] },   // N highland
-          { name: "พื้นที่สูงคลองหอยโข่ง",   coords: [6.9200, 100.5400] }
+          { name: "พื้นที่สูงเขาน้ำค้าง",       coords: [7.3500, 100.4000] },
+          { name: "พื้นที่สูงคอหงส์",           coords: [7.0100, 100.5050] }
         ]
       },
       "ชลบุรี": {
@@ -825,8 +874,8 @@
       return provinceData[type] || [];
     }
 
-    // Map each route index to its mode
-    const routeModeMap = ["fastest","fastest","balanced","balanced","safest","safest"];
+    // Map each route index to its mode  (index 6 = real-time)
+    const routeModeMap = ["fastest","fastest","balanced","balanced","safest","safest","realtime"];
 
     function getIndicesForMode(mode) {
       return routeModeMap.map((m, i) => m === mode ? i : -1).filter(i => i !== -1);
@@ -843,14 +892,20 @@
         allComputedRoutes.forEach((r, i) => {
           const layer = altRouteLines[i];
           if (!layer) return;
-          if (visibleIndices.includes(i)) {
+          const isRt = r.isRealtime;
+          if (isRt || visibleIndices.includes(i)) {
             if (!map.hasLayer(layer.border)) layer.border.addTo(map);
-            if (!map.hasLayer(layer.main)) layer.main.addTo(map);
-            layer.border.setStyle({ weight: 10, opacity: 0.55, color: '#ffffff' });
-            layer.main.setStyle({ weight: 6, opacity: 1, color: r.color, dashArray: null });
+            if (!map.hasLayer(layer.main))   layer.main.addTo(map);
+            if (isRt) {
+              layer.border.setStyle({ weight:12, opacity:0.5, color:'#ffffff', dashArray:'8 6' });
+              layer.main.setStyle({ weight:5, opacity:1, color:r.color, dashArray:'10 6' });
+            } else {
+              layer.border.setStyle({ weight:10, opacity:0.55, color:'#ffffff', dashArray: null });
+              layer.main.setStyle({ weight:6, opacity:1, color:r.color, dashArray: null });
+            }
           } else {
             if (map.hasLayer(layer.border)) map.removeLayer(layer.border);
-            if (map.hasLayer(layer.main)) map.removeLayer(layer.main);
+            if (map.hasLayer(layer.main))   map.removeLayer(layer.main);
           }
         });
         renderAltRouteCards();
@@ -1199,53 +1254,80 @@
       renderAltRouteCards();
     }
 
-    const routeColors = ["#19c2ff", "#38bdf8", "#ffa500", "#fb923c", "#2ecc71", "#86efac"];
-    const routeLabels = ["เร็วสุด A", "เร็วสุด B", "สมดุล A", "สมดุล B", "ปลอดภัยสุด A", "ปลอดภัยสุด B"];
-    const routeMedals = ["⚡","⚡","⚖️","⚖️","🛡️","🛡️"];
+    const routeColors  = ["#19c2ff","#38bdf8","#ffa500","#fb923c","#2ecc71","#86efac","#ff4b2b"];
+    const routeLabels  = ["เร็วสุด A","เร็วสุด B","สมดุล A","สมดุล B","ปลอดภัยสุด A","ปลอดภัยสุด B","Real-Time"];
+    const routeMedals  = ["⚡","⚡","⚖️","⚖️","🛡️","🛡️","🔴"];
 
     function renderAltRouteCards() {
       const container = document.getElementById("altRoutesContainer");
       if (!container) return;
 
       const visibleIndices = getIndicesForMode(currentRouteMode);
-      const modeRoutes = allComputedRoutes.filter((_, i) => visibleIndices.includes(i));
+      const modeRoutes     = allComputedRoutes.filter((_, i) => visibleIndices.includes(i));
+      const rtIndex        = allComputedRoutes.findIndex(r => r.isRealtime);
+      const rtRoute        = rtIndex >= 0 ? allComputedRoutes[rtIndex] : null;
 
-      if (!modeRoutes.length) {
-        container.innerHTML = `<div style="color:rgba(255,255,255,0.35); font-size:12px; text-align:center; padding:16px 0;">กด CALCULATE SAFE ROUTE เพื่อดูเส้นทางทางเลือก</div>`;
+      if (!modeRoutes.length && !rtRoute) {
+        container.innerHTML = `<div style="color:rgba(255,255,255,0.35);font-size:12px;text-align:center;padding:16px 0;">กด CALCULATE SAFE ROUTE เพื่อดูเส้นทางทางเลือก</div>`;
         return;
       }
 
-      const showAllBtn = `
+      const showAllBtn = modeRoutes.length ? `
         <button onclick="showAllRoutesOnMap()" style="
-          width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
-          color:white; border-radius:10px; padding:8px; font-size:12px; cursor:pointer;
-          margin-bottom:10px; transition:0.2s;
+          width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+          color:white;border-radius:10px;padding:8px;font-size:12px;cursor:pointer;
+          margin-bottom:10px;transition:0.2s;
         " onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
           👁 แสดงทั้ง 2 เส้นทาง (${currentRouteMode === 'fastest' ? 'เร็วสุด' : currentRouteMode === 'safest' ? 'ปลอดภัยสุด' : 'สมดุล'})
-        </button>`;
+        </button>` : '';
 
-      container.innerHTML = showAllBtn + modeRoutes.map((r, localIdx) => {
+      const modeCards = modeRoutes.map((r, localIdx) => {
         const i = visibleIndices[localIdx];
         return `
         <div onclick="highlightRoute(${i})" style="
           cursor:pointer;
-          background: ${i === activeRouteIndex ? 'rgba('+hexToRgb(r.color)+',0.2)' : 'rgba(255,255,255,0.03)'};
-          border: 1px solid ${i === activeRouteIndex ? r.color : 'rgba(255,255,255,0.08)'};
-          border-left: 4px solid ${r.color};
-          border-radius: 12px; padding: 10px 12px; margin-bottom: 7px; transition: 0.2s;
+          background:${i === activeRouteIndex ? 'rgba('+hexToRgb(r.color)+',0.2)' : 'rgba(255,255,255,0.03)'};
+          border:1px solid ${i === activeRouteIndex ? r.color : 'rgba(255,255,255,0.08)'};
+          border-left:4px solid ${r.color};
+          border-radius:12px;padding:10px 12px;margin-bottom:7px;transition:0.2s;
         ">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-size:13px; font-weight:600; color:${r.color}">${routeMedals[i]} Route ${i+1} <span style="font-size:11px; opacity:0.65">${routeLabels[i]}</span></span>
-            <span style="font-size:12px; font-weight:700; color:${r.riskMeta.color}">${r.safetyScore}/100</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:13px;font-weight:600;color:${r.color}">${routeMedals[i]} Route ${i+1} <span style="font-size:11px;opacity:0.65">${routeLabels[i]}</span></span>
+            <span style="font-size:12px;font-weight:700;color:${r.riskMeta.color}">${r.safetyScore}/100</span>
           </div>
-          <div style="font-size:11px; color:rgba(255,255,255,0.55); display:flex; gap:10px;">
-            <span>📍 ${r.distanceKm} km</span>
-            <span>⏱ ${r.durationMin} min</span>
+          <div style="font-size:11px;color:rgba(255,255,255,0.55);display:flex;gap:10px;">
+            <span>📍 ${r.distanceKm} km</span><span>⏱ ${r.durationMin} min</span>
             <span style="color:${r.riskMeta.color}">⚠ ${r.riskMeta.text}</span>
           </div>
-          <div style="font-size:10px; color:rgba(255,255,255,0.4); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">→ ${r.destination.name}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">→ ${r.destination.name}</div>
         </div>`;
       }).join('');
+
+      // Real-time card (always shown, pulsing border)
+      const rtCard = rtRoute ? `
+        <div style="margin-top:8px;border-top:1px solid rgba(255,75,43,0.3);padding-top:8px;">
+          <div style="font-size:10px;color:#ff4b2b;font-weight:700;letter-spacing:1px;margin-bottom:6px;">🤖 AI REAL-TIME — วิเคราะห์อิสระ</div>
+          <div onclick="highlightRoute(${rtIndex})" style="
+            cursor:pointer;
+            background:${rtIndex === activeRouteIndex ? 'rgba(255,75,43,0.2)' : 'rgba(255,75,43,0.05)'};
+            border:1px solid ${rtIndex === activeRouteIndex ? '#ff4b2b' : 'rgba(255,75,43,0.35)'};
+            border-left:4px solid #ff4b2b;
+            border-radius:12px;padding:10px 12px;transition:0.2s;
+          ">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:13px;font-weight:600;color:#ff4b2b">🤖 AI Route <span style="font-size:11px;opacity:0.65">ประหยัดน้ำมัน+ปลอดภัย</span></span>
+              <span style="font-size:12px;font-weight:700;color:${rtRoute.riskMeta.color}">${rtRoute.safetyScore}/100</span>
+            </div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.55);display:flex;gap:10px;">
+              <span>📍 ${rtRoute.distanceKm} km</span><span>⏱ ${rtRoute.durationMin} min</span>
+              <span style="color:${rtRoute.riskMeta.color}">⚠ ${rtRoute.riskMeta.text}</span>
+            </div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">→ ${rtRoute.destination.name}</div>
+            ${rtRoute.aiReason ? `<div style="font-size:10px;color:rgba(255,180,100,0.8);margin-top:5px;line-height:1.4;white-space:normal;">💡 ${rtRoute.aiReason}</div>` : ''}
+          </div>
+        </div>` : '';
+
+      container.innerHTML = showAllBtn + modeCards + rtCard;
     }
 
     function hexToRgb(hex) {
@@ -1255,25 +1337,118 @@
       return `${r},${g},${b}`;
     }
 
-    async function fetchOsrmRoute(startLat, startLng, endLat, endLng, waypoint) {
-      let coordStr;
-      if (waypoint) {
-        coordStr = `${startLng},${startLat};${waypoint.lng},${waypoint.lat};${endLng},${endLat}`;
-      } else {
-        coordStr = `${startLng},${startLat};${endLng},${endLat}`;
-      }
-      const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson&steps=true`;
-      const response = await fetch(url);
-      const result = await response.json();
-      return result?.routes?.[0] || null;
+    function chooseDestinationForMode(mode, rank = 0) {
+      const places     = getSafePlacesForSelectedProvince();
+      if (!places.length) return null;
+
+      const start      = currentStartPoint || getSelectedProvinceData().center;
+      const floodPoint = getSelectedProvinceData().flood;
+      const waterLevel = Number(document.getElementById("waterLevel").value) / 100;
+      const floodRadius = waterLevel * 10 + 200;
+
+      const scored = places.map(place => {
+        const dStart = map.distance(start, place.coords);
+        const dFlood = map.distance(floodPoint, place.coords);
+        const inFloodZone  = dFlood < floodRadius;
+        const floodPenalty = inFloodZone ? 1e9 : Math.max(0, 1 - dFlood / (floodRadius * 3)) * 3000;
+
+        let score = 0;
+        if (mode === "fastest") {
+          score = dStart + floodPenalty;
+        } else if (mode === "safest") {
+          score = dStart * 0.5 - dFlood * 0.9 + floodPenalty;
+        } else {
+          score = dStart * 0.8 - dFlood * 0.4 + floodPenalty;
+        }
+        return { ...place, _score: score };
+      });
+
+      scored.sort((a, b) => a._score - b._score);
+      return scored[Math.min(rank, scored.length - 1)];
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // FIX 2: calculateRoute
-    // Each of the 6 routes now resolves its own destination via
-    // chooseDestinationForRoute(i), so destinations differ across
-    // modes AND within each mode pair (A vs B).
-    // A single start-marker and per-route destination markers are shown.
+    async function fetchOsrmRoutes(startLat, startLng, endLat, endLng, maxRoutes = 2) {
+      const coordStr = `${startLng},${startLat};${endLng},${endLat}`;
+      const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+      const response = await fetch(url);
+      const result   = await response.json();
+      return Array.isArray(result?.routes) ? result.routes.slice(0, maxRoutes) : [];
+    }
+
+    async function fetchOsrmRoute(startLat, startLng, endLat, endLng) {
+      const routes = await fetchOsrmRoutes(startLat, startLng, endLat, endLng, 1);
+      return routes[0] || null;
+    }
+
+    function normalizeRouteCoords(coords) {
+      return coords.map(c => [Number(c[0].toFixed(5)), Number(c[1].toFixed(5))]);
+    }
+
+    function routesAreSame(routeA, routeB) {
+      if (!routeA || !routeB) return false;
+      if (Math.abs((routeA.distance || 0) - (routeB.distance || 0)) > 30) return false;
+      if (Math.abs((routeA.duration || 0) - (routeB.duration || 0)) > 15) return false;
+
+      const coordsA = normalizeRouteCoords(routeA.geometry?.coordinates || []);
+      const coordsB = normalizeRouteCoords(routeB.geometry?.coordinates || []);
+      if (coordsA.length !== coordsB.length) return false;
+      for (let i = 0; i < coordsA.length; i++) {
+        if (coordsA[i][0] !== coordsB[i][0] || coordsA[i][1] !== coordsB[i][1]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    async function getModeRoutes(mode, start, floodPoint, waterLevel) {
+      const destinationA = chooseDestinationForMode(mode, 0);
+      if (!destinationA) return [];
+      const destinationB = chooseDestinationForMode(mode, 1);
+      const destinationC = chooseDestinationForMode(mode, 2);
+
+      const osrmRoutesA = await fetchOsrmRoutes(
+        start[0], start[1],
+        destinationA.coords[0], destinationA.coords[1],
+        2
+      );
+
+      const routePairs = [];
+      if (osrmRoutesA[0]) routePairs.push({ route: osrmRoutesA[0], destination: destinationA });
+
+      if (osrmRoutesA[1] && !routesAreSame(osrmRoutesA[0], osrmRoutesA[1])) {
+        routePairs.push({ route: osrmRoutesA[1], destination: destinationA });
+      }
+
+      if (routePairs.length < 2 && destinationB && destinationB.name !== destinationA.name) {
+        const routeB = await fetchOsrmRoute(
+          start[0], start[1],
+          destinationB.coords[0], destinationB.coords[1]
+        );
+        if (routeB && !routesAreSame(routePairs[0].route, routeB)) {
+          routePairs.push({ route: routeB, destination: destinationB });
+        }
+      }
+
+      if (routePairs.length < 2 && destinationC && destinationC.name !== destinationA.name && destinationC.name !== destinationB?.name) {
+        const routeC = await fetchOsrmRoute(
+          start[0], start[1],
+          destinationC.coords[0], destinationC.coords[1]
+        );
+        if (routeC && !routesAreSame(routePairs[0].route, routeC)) {
+          routePairs.push({ route: routeC, destination: destinationC });
+        }
+      }
+
+      if (routePairs.length === 1) {
+        routePairs.push(routePairs[0]);
+      }
+
+      return routePairs.slice(0, 2);
+    }
+
+    // ─── calculateRoute ────────────────────────────────────────────────
+    // Routes 0-5: 2 เส้นทางจริงต่อโหมด โดยใช้ OSRM alternatives สำหรับเส้นทาง A/B
+    // Route 6:    Real-Time → ปลายทางอิสระของ AI พร้อมเส้นทางจริงจาก OSRM
     // ─────────────────────────────────────────────────────────────────
     async function calculateRoute() {
       clearRoute();
@@ -1284,78 +1459,188 @@
       const floodPoint = getSelectedProvinceData().flood;
       const waterLevel = Number(document.getElementById("waterLevel").value) / 100;
 
-      // Always show a start marker
       addStartMarker(start, "จุดเริ่มต้น: " + getSelectedProvinceName());
-      updateRouteInfo("กำลังคำนวณเส้นทางทางเลือก 6 เส้น...");
-
-      // Destination markers per route (different colours to match routes)
-      const destMarkers = [];
+      updateRouteInfo("กำลังคำนวณเส้นทาง 7 เส้น (รวม Real-Time)...");
 
       const routeResults = [];
+      const modes = ["fastest", "balanced", "safest"];
 
-      for (let i = 0; i < 6; i++) {
-        try {
-          // ← KEY CHANGE: each route picks its own destination
-          const destination = chooseDestinationForRoute(i);
-          if (!destination) continue;
+      for (let modeIndex = 0; modeIndex < modes.length; modeIndex++) {
+        const mode = modes[modeIndex];
+        const routePairs = await getModeRoutes(mode, start, floodPoint, waterLevel);
+        if (!routePairs.length) continue;
 
-          const wp    = getWaypointVariants(start, destination.coords, i);
-          const route = await fetchOsrmRoute(
-            start[0], start[1],
-            destination.coords[0], destination.coords[1],
-            wp
-          );
-          if (!route) continue;
+        for (let routeOffset = 0; routeOffset < 2; routeOffset++) {
+          const pair = routePairs[routeOffset];
+          if (!pair || !pair.route) continue;
+          const route = pair.route;
+          const destination = pair.destination;
+          const routeIndex = modeIndex * 2 + routeOffset;
 
           const coords      = route.geometry.coordinates.map(c => [c[1], c[0]]);
           const distanceKm  = Number((route.distance / 1000).toFixed(2));
           const durationMin = Math.ceil(route.duration / 60);
-          const floodPenalty  = getFloodPenalty(coords, floodPoint, waterLevel);
-          const safetyScore   = calculateAltSafetyScore(distanceKm, durationMin, waterLevel, floodPenalty, routeModeMap[i]);
-          const riskMeta      = getRiskLevelByScore(safetyScore);
-          const steps         = route.legs?.[0]?.steps || [];
+          const floodPenalty = getFloodPenalty(coords, floodPoint, waterLevel);
+          const safetyScore  = calculateAltSafetyScore(distanceKm, durationMin, waterLevel, floodPenalty, routeModeMap[routeIndex]);
+          const riskMeta     = getRiskLevelByScore(safetyScore);
+          const steps        = route.legs?.[0]?.steps || [];
 
-          // Draw route as two layered polylines
-          const borderLine = L.polyline(coords, {
-            color: '#ffffff',
-            weight: 10,
-            opacity: 0.55,
-            dashArray: null
-          }).addTo(map);
+          const borderLine = L.polyline(coords, { color:'#ffffff', weight:10, opacity:0.55 }).addTo(map);
+          const line       = L.polyline(coords, { color:routeColors[routeIndex], weight:6, opacity:1 }).addTo(map);
+          altRouteLines.push({ main: line, border: borderLine, color: routeColors[routeIndex] });
 
-          const line = L.polyline(coords, {
-            color: routeColors[i],
-            weight: 6,
-            opacity: 1,
-            dashArray: null
-          }).addTo(map);
-
-          altRouteLines.push({ main: line, border: borderLine, color: routeColors[i] });
-
-          // Place a small coloured destination marker for each route
           const destIcon = L.divIcon({
             className: '',
-            html: `<div style="
-              width:14px; height:14px; border-radius:50%;
-              background:${routeColors[i]}; border:2px solid #fff;
-              box-shadow:0 0 6px ${routeColors[i]};
-            "></div>`,
-            iconSize: [14, 14],
-            iconAnchor: [7, 7]
+            html: `<div style="width:14px;height:14px;border-radius:50%;background:${routeColors[routeIndex]};border:2px solid #fff;box-shadow:0 0 6px ${routeColors[routeIndex]};"></div>`,
+            iconSize: [14,14], iconAnchor: [7,7]
           });
-          const dm = L.marker(destination.coords, { icon: destIcon })
+          L.marker(destination.coords, { icon: destIcon })
             .addTo(map)
-            .bindPopup(`Route ${i+1} (${routeLabels[i]})<br>${destination.name}`);
-          destMarkers.push(dm);
+            .bindPopup(`Route ${routeIndex+1} (${routeLabels[routeIndex]})<br>${destination.name}`);
 
-          routeResults.push({
-            distanceKm, durationMin, safetyScore, riskMeta,
-            steps, destination, color: routeColors[i], coords
-          });
-        } catch (e) {
-          console.warn("Route " + i + " failed:", e);
+          routeResults.push({ distanceKm, durationMin, safetyScore, riskMeta, steps, destination, color: routeColors[routeIndex], coords });
         }
       }
+
+    // ─── AI Real-Time: วิเคราะห์หาสถานที่ปลอดภัยที่ดีที่สุดอิสระ ───────
+    // เก็บ destination ที่ AI เลือกไว้ใช้ใน highlightRoute
+    let realtimeAIAnalysis = null;
+
+    async function chooseAIDestination(start, floodPoint, waterLevel) {
+      // รวบรวมสถานที่ทุกประเภทของจังหวัดนี้
+      const provinceName  = getSelectedProvinceName();
+      const provinceData  = safePlacesByProvince[provinceName] || {};
+      const allTypes      = ["shelter","hospital","police","highground"];
+      const floodRadius   = waterLevel * 10 + 200;
+      const MAX_FUEL_KM   = 80; // จำกัดระยะทาง (น้ำมันจำกัด)
+
+      // รวบรวมสถานที่ทุกประเภท แล้วส่งให้ Claude วิเคราะห์
+      const candidates = [];
+      allTypes.forEach(type => {
+        (provinceData[type] || []).forEach(place => {
+          const dStart = map.distance(start, place.coords) / 1000; // km
+          const dFlood = map.distance(floodPoint, place.coords);
+          const inFlood = dFlood < floodRadius;
+          if (!inFlood && dStart <= MAX_FUEL_KM) {
+            candidates.push({
+              name: place.name,
+              type,
+              coords: place.coords,
+              distKm: Math.round(dStart * 10) / 10,
+              distFromFloodM: Math.round(dFlood)
+            });
+          }
+        });
+      });
+
+      if (!candidates.length) {
+        // fallback: ไม่มี candidate → ใช้ไกลสุดจาก flood ในรัศมี 120km
+        const all = [];
+        allTypes.forEach(type => {
+          (provinceData[type] || []).forEach(place => {
+            const dStart = map.distance(start, place.coords) / 1000;
+            const dFlood = map.distance(floodPoint, place.coords);
+            all.push({ ...place, type, distKm: dStart, distFromFloodM: dFlood });
+          });
+        });
+        all.sort((a,b) => b.distFromFloodM - a.distFromFloodM);
+        return all[0] || null;
+      }
+
+      // เรียก Claude API ให้วิเคราะห์
+      try {
+        const prompt = `คุณเป็นระบบ AI วิเคราะห์เส้นทางฉุกเฉินน้ำท่วม
+จังหวัด: ${provinceName}
+ระดับน้ำ: ${waterLevel.toFixed(1)} เมตร
+จำกัดระยะทาง (น้ำมัน): ${MAX_FUEL_KM} km
+รัศมีน้ำท่วม: ${(floodRadius/1000).toFixed(1)} km
+
+สถานที่ปลอดภัยที่พอเป็นไปได้:
+${candidates.map((c,i) => `${i+1}. [${c.type}] ${c.name} — ${c.distKm}km จากจุดเริ่ม, ห่างน้ำท่วม ${(c.distFromFloodM/1000).toFixed(1)}km`).join('\n')}
+
+เลือกสถานที่ที่ดีที่สุด 1 แห่ง โดยเน้น:
+1. ปลอดภัยจากน้ำท่วม (ห่างมาก)
+2. เร็วที่สุดเพื่อประหยัดน้ำมัน
+3. ไม่เกิน ${MAX_FUEL_KM}km
+
+ตอบ JSON เท่านั้น: {"index": <เลขที่ 1-${candidates.length}>, "reason": "<เหตุผลสั้น 1 ประโยค ภาษาไทย>"}`;
+
+        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 200,
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
+        const data = await resp.json();
+        const text = data?.content?.[0]?.text || "";
+        const clean = text.replace(/```json|```/g,"").trim();
+        const parsed = JSON.parse(clean);
+        const chosen = candidates[Math.min(parsed.index - 1, candidates.length - 1)];
+        realtimeAIAnalysis = { reason: parsed.reason, candidates };
+        return chosen;
+      } catch(e) {
+        console.warn("AI analysis failed, using best score:", e);
+        // fallback: เลือกด้วย score เอง
+        candidates.sort((a,b) => {
+          const scoreA = -(a.distKm * 0.4) + (a.distFromFloodM / 1000 * 0.6);
+          const scoreB = -(b.distKm * 0.4) + (b.distFromFloodM / 1000 * 0.6);
+          return scoreB - scoreA;
+        });
+        realtimeAIAnalysis = { reason: "วิเคราะห์โดย fallback score (AI ไม่พร้อมใช้งาน)", candidates };
+        return candidates[0];
+      }
+    }
+
+      // ── Route 6: AI Real-Time ─────────────────────────────────────
+      try {
+        updateRouteInfo("🤖 AI กำลังวิเคราะห์สถานที่ปลอดภัยที่ดีที่สุด...");
+        const rtDest = await chooseAIDestination(start, floodPoint, waterLevel);
+
+        if (rtDest) {
+          const rtRoute = await fetchOsrmRoute(
+            start[0], start[1],
+            rtDest.coords[0], rtDest.coords[1]
+          );
+
+          if (rtRoute) {
+            const coords      = rtRoute.geometry.coordinates.map(c => [c[1], c[0]]);
+            const distanceKm  = Number((rtRoute.distance / 1000).toFixed(2));
+            const durationMin = Math.ceil(rtRoute.duration / 60);
+            const floodPenalty = getFloodPenalty(coords, floodPoint, waterLevel);
+            const safetyScore  = calculateAltSafetyScore(distanceKm, durationMin, waterLevel, floodPenalty, "safest") + 5;
+            const riskMeta     = getRiskLevelByScore(Math.min(safetyScore, 99));
+            const steps        = rtRoute.legs?.[0]?.steps || [];
+            const rtColor      = routeColors[6];
+
+            const borderLine = L.polyline(coords, { color:'#ffffff', weight:12, opacity:0.6, dashArray:'10 5' }).addTo(map);
+            const line       = L.polyline(coords, { color:rtColor,   weight:6,  opacity:1,   dashArray:'12 5' }).addTo(map);
+            altRouteLines.push({ main: line, border: borderLine, color: rtColor });
+
+            const rtIcon = L.divIcon({
+              className: '',
+              html: `<div style="width:18px;height:18px;border-radius:50%;background:#ff4b2b;border:3px solid #fff;box-shadow:0 0 12px #ff4b2b;animation:pulse 1.2s infinite;display:flex;align-items:center;justify-content:center;font-size:9px;">🤖</div>`,
+              iconSize: [18,18], iconAnchor: [9,9]
+            });
+            L.marker(rtDest.coords, { icon: rtIcon })
+              .addTo(map)
+              .bindPopup(`🤖 AI Real-Time<br><b>${rtDest.name}</b><br><i>${realtimeAIAnalysis?.reason || ''}</i>`);
+
+            routeResults.push({
+              distanceKm, durationMin,
+              safetyScore: Math.min(safetyScore, 99),
+              riskMeta, steps,
+              destination: rtDest,
+              color: rtColor,
+              coords,
+              isRealtime: true,
+              aiReason: realtimeAIAnalysis?.reason || ""
+            });
+          }
+        }
+      } catch (e) { console.warn("AI Real-time route failed:", e); }
 
       if (!routeResults.length) {
         updateRouteInfo("ไม่สามารถคำนวณเส้นทางได้ กรุณาลองใหม่");
@@ -1365,18 +1650,16 @@
       allComputedRoutes = routeResults;
       activeRouteIndex  = -1;
 
-      // Fit map to all visible route lines
       const allLatLngs = routeResults.flatMap(r => r.coords);
-      if (allLatLngs.length) {
-        map.fitBounds(L.latLngBounds(allLatLngs), { padding: [40, 40] });
-      }
+      if (allLatLngs.length) map.fitBounds(L.latLngBounds(allLatLngs), { padding:[40,40] });
 
-      // Hide routes that don't belong to the current mode
+      // ซ่อน route ที่ไม่ใช่ mode ปัจจุบัน (route 6 real-time แสดงเสมอ)
       const visibleIndices = getIndicesForMode(currentRouteMode);
       allComputedRoutes.forEach((r, i) => {
         const layer = altRouteLines[i];
         if (!layer) return;
-        if (!visibleIndices.includes(i)) {
+        const isRt = r.isRealtime;
+        if (!isRt && !visibleIndices.includes(i)) {
           if (map.hasLayer(layer.border)) map.removeLayer(layer.border);
           if (map.hasLayer(layer.main))   map.removeLayer(layer.main);
         }
